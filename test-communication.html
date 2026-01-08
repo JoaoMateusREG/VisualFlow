@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Comunicação Frontend-Backend</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button:disabled {
+            background: #6b7280;
+            cursor: not-allowed;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .log {
+            background: #111;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Comunicação Frontend-Backend</h1>
+    
+    <div class="container">
+        <h2>Status dos Serviços</h2>
+        <button onclick="testFrontend()">Testar Frontend</button>
+        <button onclick="testBackend()">Testar Backend</button>
+        <button onclick="testCommunication()">Testar Comunicação</button>
+        <div id="status"></div>
+    </div>
+
+    <div class="container">
+        <h2>Teste de Fluxo Completo</h2>
+        <button onclick="testFullFlow()" id="testFlowBtn">Executar Fluxo de Teste</button>
+        <div id="flowStatus"></div>
+    </div>
+
+    <div class="container">
+        <h2>Logs</h2>
+        <button onclick="clearLogs()">Limpar Logs</button>
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const FRONTEND_BASE = 'http://localhost:3001';
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('logs');
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : '';
+            logElement.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        async function testFrontend() {
+            log('🔍 Testando Frontend...');
+            try {
+                const response = await fetch(FRONTEND_BASE);
+                if (response.ok) {
+                    log('✅ Frontend está rodando em ' + FRONTEND_BASE, 'success');
+                    document.getElementById('status').innerHTML += '<div class="success">✅ Frontend: OK</div>';
+                } else {
+                    throw new Error(`Status: ${response.status}`);
+                }
+            } catch (error) {
+                log('❌ Frontend não está acessível: ' + error.message, 'error');
+                document.getElementById('status').innerHTML += '<div class="error">❌ Frontend: FALHA</div>';
+            }
+        }
+
+        async function testBackend() {
+            log('🔍 Testando Backend...');
+            try {
+                const response = await fetch(API_BASE);
+                const data = await response.json();
+                log('✅ Backend está rodando: ' + data.message, 'success');
+                document.getElementById('status').innerHTML += '<div class="success">✅ Backend: OK</div>';
+            } catch (error) {
+                log('❌ Backend não está acessível: ' + error.message, 'error');
+                document.getElementById('status').innerHTML += '<div class="error">❌ Backend: FALHA</div>';
+            }
+        }
+
+        async function testCommunication() {
+            log('🔍 Testando comunicação CORS...');
+            try {
+                const response = await fetch(API_BASE + '/api/executions');
+                const data = await response.json();
+                log('✅ Comunicação CORS funcionando', 'success');
+                log('📊 Execuções encontradas: ' + data.length);
+                document.getElementById('status').innerHTML += '<div class="success">✅ CORS: OK</div>';
+            } catch (error) {
+                log('❌ Erro de CORS: ' + error.message, 'error');
+                document.getElementById('status').innerHTML += '<div class="error">❌ CORS: FALHA</div>';
+            }
+        }
+
+        async function testFullFlow() {
+            const btn = document.getElementById('testFlowBtn');
+            btn.disabled = true;
+            btn.textContent = 'Executando...';
+            
+            log('🚀 Iniciando teste de fluxo completo...');
+            
+            try {
+                // Criar fluxo de teste
+                const testFlow = {
+                    metadata: {
+                        name: "Fluxo de Teste",
+                        createdAt: new Date().toISOString(),
+                        version: "1.0.0",
+                        totalSteps: 2
+                    },
+                    validation: {
+                        isValid: true,
+                        errors: []
+                    },
+                    executionOrder: [
+                        {
+                            id: "test_1",
+                            type: "wait",
+                            label: "Aguardar 2 segundos",
+                            inputs: {
+                                wait_type: "time",
+                                duration: "2"
+                            },
+                            position: { x: 0, y: 0 }
+                        },
+                        {
+                            id: "test_2",
+                            type: "wait",
+                            label: "Aguardar mais 1 segundo",
+                            inputs: {
+                                wait_type: "time",
+                                duration: "1"
+                            },
+                            position: { x: 0, y: 100 }
+                        }
+                    ],
+                    rawData: {
+                        nodes: [],
+                        edges: []
+                    }
+                };
+
+                // Validar fluxo
+                log('📋 Validando fluxo...');
+                const validateResponse = await fetch(API_BASE + '/api/validate-flow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testFlow)
+                });
+                
+                const validation = await validateResponse.json();
+                if (!validation.valid) {
+                    throw new Error('Fluxo inválido: ' + validation.errors.join(', '));
+                }
+                log('✅ Fluxo validado com sucesso', 'success');
+
+                // Executar fluxo
+                log('🎯 Executando fluxo...');
+                const executeResponse = await fetch(API_BASE + '/api/execute-flow', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testFlow)
+                });
+                
+                const execution = await executeResponse.json();
+                log('🆔 ID da execução: ' + execution.execution_id);
+                
+                // Monitorar execução
+                const executionId = execution.execution_id;
+                let completed = false;
+                let attempts = 0;
+                const maxAttempts = 30; // 30 segundos máximo
+                
+                while (!completed && attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    attempts++;
+                    
+                    const statusResponse = await fetch(API_BASE + `/api/execution/${executionId}`);
+                    const status = await statusResponse.json();
+                    
+                    log(`📊 Passo ${status.current_step}/${status.total_steps} - Status: ${status.status}`);
+                    
+                    if (status.logs && status.logs.length > 0) {
+                        status.logs.forEach(logMsg => log('📝 ' + logMsg));
+                    }
+                    
+                    if (['completed', 'error', 'cancelled'].includes(status.status)) {
+                        completed = true;
+                        
+                        if (status.status === 'completed') {
+                            log('🎉 Fluxo executado com sucesso!', 'success');
+                            document.getElementById('flowStatus').innerHTML = '<div class="success">✅ Teste completo: SUCESSO</div>';
+                        } else {
+                            log('❌ Fluxo falhou: ' + (status.error || 'Erro desconhecido'), 'error');
+                            document.getElementById('flowStatus').innerHTML = '<div class="error">❌ Teste completo: FALHA</div>';
+                        }
+                    }
+                }
+                
+                if (!completed) {
+                    log('⏰ Timeout na execução do fluxo', 'error');
+                    document.getElementById('flowStatus').innerHTML = '<div class="error">❌ Teste completo: TIMEOUT</div>';
+                }
+                
+            } catch (error) {
+                log('❌ Erro no teste de fluxo: ' + error.message, 'error');
+                document.getElementById('flowStatus').innerHTML = '<div class="error">❌ Teste completo: ERRO</div>';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Executar Fluxo de Teste';
+            }
+        }
+
+        // Executar testes básicos ao carregar
+        window.onload = function() {
+            log('🚀 Iniciando testes automáticos...');
+            setTimeout(testFrontend, 500);
+            setTimeout(testBackend, 1000);
+            setTimeout(testCommunication, 1500);
+        };
+    </script>
+</body>
+</html>
