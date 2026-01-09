@@ -1,0 +1,239 @@
+{
+  "metadata": {
+    "id": "f56e2946-5a11-43a5-9eaa-b6dabd8c1115",
+    "name": "Demo 1: Automação Web (Login & Clique)",
+    "description": "Exemplo de login, clique e extração de dados.",
+    "created_at": "2026-01-09T00:02:55.822497",
+    "updated_at": "2026-01-09T00:02:55.822499",
+    "version": "1.0.0",
+    "tags": [
+      "exemplo",
+      "demo"
+    ],
+    "author": "system",
+    "is_template": false
+  },
+  "flow_data": {
+    "metadata": {
+      "name": "Demo 1: Automação Web (Login & Clique)",
+      "createdAt": "2026-01-09T00:02:55.822474",
+      "version": "1.0.0",
+      "totalSteps": 5
+    },
+    "validation": {
+      "isValid": true,
+      "errors": []
+    },
+    "executionOrder": [
+      {
+        "id": "9eea5ff3-8bec-4661-a120-24b945548b3a",
+        "type": "login",
+        "label": "1. Login no Sistema",
+        "inputs": {
+          "url": "https://saucedemo.com",
+          "username_selector": "user-name",
+          "username_value": "standard_user",
+          "password_selector": "password",
+          "password_value": "secret_sauce",
+          "login_button_selector": "login-button"
+        },
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "id": "9e626996-e1f3-4bd3-ba61-4b3599afc58f",
+        "type": "extractText",
+        "label": "2. Extrair Título",
+        "inputs": {
+          "selector_value": "//span[@class='title']",
+          "variable_name": "page_title",
+          "selector_type": "xpath"
+        },
+        "position": {
+          "x": 100,
+          "y": 250
+        }
+      },
+      {
+        "id": "34e8c310-8889-447c-9a7c-a72210c680c3",
+        "type": "clickButton",
+        "label": "3. Adicionar Produto",
+        "inputs": {
+          "selector_value": "add-to-cart-sauce-labs-backpack",
+          "selector_type": "id",
+          "wait_condition": "element_to_be_clickable"
+        },
+        "position": {
+          "x": 100,
+          "y": 400
+        }
+      },
+      {
+        "id": "56705a13-3b3b-4299-930b-7c1f92bc7743",
+        "type": "wait",
+        "label": "4. Aguardar Carrinho",
+        "inputs": {
+          "wait_type": "element",
+          "selector_value": ".shopping_cart_badge",
+          "selector_type": "css_selector"
+        },
+        "position": {
+          "x": 100,
+          "y": 550
+        }
+      },
+      {
+        "id": "5a7fa92a-adaa-45ec-8257-1d76d2807f5e",
+        "type": "executeScript",
+        "label": "5. Alert Customizado",
+        "inputs": {
+          "script": "alert('Fluxo de compra finalizado via VisualFlow!'); return 'ok';"
+        },
+        "position": {
+          "x": 100,
+          "y": 700
+        }
+      }
+    ],
+    "rawData": {
+      "nodes": [
+        {
+          "id": "9eea5ff3-8bec-4661-a120-24b945548b3a",
+          "type": "login",
+          "data": {
+            "label": "1. Login no Sistema",
+            "type": "login",
+            "inputs": {
+              "url": "https://saucedemo.com",
+              "username_selector": "user-name",
+              "username_value": "standard_user",
+              "password_selector": "password",
+              "password_value": "secret_sauce",
+              "login_button_selector": "login-button"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 100
+          }
+        },
+        {
+          "id": "9e626996-e1f3-4bd3-ba61-4b3599afc58f",
+          "type": "extractText",
+          "data": {
+            "label": "2. Extrair Título",
+            "type": "extractText",
+            "inputs": {
+              "selector_value": "//span[@class='title']",
+              "variable_name": "page_title",
+              "selector_type": "xpath"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 250
+          }
+        },
+        {
+          "id": "34e8c310-8889-447c-9a7c-a72210c680c3",
+          "type": "clickButton",
+          "data": {
+            "label": "3. Adicionar Produto",
+            "type": "clickButton",
+            "inputs": {
+              "selector_value": "add-to-cart-sauce-labs-backpack",
+              "selector_type": "id",
+              "wait_condition": "element_to_be_clickable"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 400
+          }
+        },
+        {
+          "id": "56705a13-3b3b-4299-930b-7c1f92bc7743",
+          "type": "wait",
+          "data": {
+            "label": "4. Aguardar Carrinho",
+            "type": "wait",
+            "inputs": {
+              "wait_type": "element",
+              "selector_value": ".shopping_cart_badge",
+              "selector_type": "css_selector"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 550
+          }
+        },
+        {
+          "id": "5a7fa92a-adaa-45ec-8257-1d76d2807f5e",
+          "type": "executeScript",
+          "data": {
+            "label": "5. Alert Customizado",
+            "type": "executeScript",
+            "inputs": {
+              "script": "alert('Fluxo de compra finalizado via VisualFlow!'); return 'ok';"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 700
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e9eea5ff3-8bec-4661-a120-24b945548b3a-9e626996-e1f3-4bd3-ba61-4b3599afc58f",
+          "source": "9eea5ff3-8bec-4661-a120-24b945548b3a",
+          "target": "9e626996-e1f3-4bd3-ba61-4b3599afc58f",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e9e626996-e1f3-4bd3-ba61-4b3599afc58f-34e8c310-8889-447c-9a7c-a72210c680c3",
+          "source": "9e626996-e1f3-4bd3-ba61-4b3599afc58f",
+          "target": "34e8c310-8889-447c-9a7c-a72210c680c3",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e34e8c310-8889-447c-9a7c-a72210c680c3-56705a13-3b3b-4299-930b-7c1f92bc7743",
+          "source": "34e8c310-8889-447c-9a7c-a72210c680c3",
+          "target": "56705a13-3b3b-4299-930b-7c1f92bc7743",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e56705a13-3b3b-4299-930b-7c1f92bc7743-5a7fa92a-adaa-45ec-8257-1d76d2807f5e",
+          "source": "56705a13-3b3b-4299-930b-7c1f92bc7743",
+          "target": "5a7fa92a-adaa-45ec-8257-1d76d2807f5e",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        }
+      ],
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+      }
+    }
+  },
+  "file_path": "workflows/saved/Demo_Web_Automation.json"
+}

@@ -23,16 +23,33 @@ except Exception as e:
 from models import FlowData, ExecutionStatus, ExecutionResult
 from workflow_storage import workflow_storage, WorkflowMetadata, SavedWorkflow
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 app = FastAPI(title="VisualFlow Backend API", version="2.0.0", description="API para execução de fluxos de automação VisualFlow")
 
 # Configurar CORS para permitir comunicação com o frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # URLs do frontend
+    allow_origins=["*"],  # Permitir tudo no mode 'single container'
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Caminho para os arquivos estáticos do frontend (React build)
+# Espera-se que o build esteja em '../dist' relativo a este arquivo ou em '/app/dist' no Docker
+FRONTEND_DIST_DIR = os.getenv("FRONTEND_DIST_DIR", "/app/dist")
+
+try:
+    if os.path.exists(FRONTEND_DIST_DIR):
+        # Montar arquivos estáticos (JS, CSS, Imagens)
+        app.mount("/assets", StaticFiles(directory=f"{FRONTEND_DIST_DIR}/assets"), name="assets")
+        print(f"✅ Serving frontend assets from {FRONTEND_DIST_DIR}")
+    else:
+        print(f"⚠️ Frontend dist dir not found at {FRONTEND_DIST_DIR}. Running in API-only mode.")
+except Exception as e:
+    print(f"⚠️ Failed to mount static files: {e}")
 
 # Armazenar execuções em memória (em produção, usar banco de dados)
 executions: Dict[str, ExecutionResult] = {}
@@ -53,7 +70,12 @@ class UpdateWorkflowRequest(BaseModel):
 
 @app.get("/")
 async def root():
-    return {"message": "Selenium Flow Executor API", "version": "1.0.0"}
+    if os.path.exists(f"{FRONTEND_DIST_DIR}/index.html"):
+        from fastapi.responses import FileResponse
+        return FileResponse(f"{FRONTEND_DIST_DIR}/index.html")
+    return {"message": "Selenium Flow Executor API", "version": "1.0.0", "note": "Frontend not found"}
+
+
 
 @app.post("/api/execute-flow")
 async def execute_flow(flow_data: FlowData, background_tasks: BackgroundTasks):
@@ -333,6 +355,21 @@ async def run_selenium_flow(execution_id: str, flow_data: FlowData):
         execution.error = str(e)
         execution.finished_at = datetime.now()
         execution.logs.append(f"Erro na execução: {str(e)}")
+
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    # Se começar com api, deixa o FastAPI lidar (vai dar 404 se não existir rota definida)
+    # Importante: Como esta é a última rota, qualquer requisição api/ que cair aqui
+    # significa que não deu match em nenhuma rota anterior.
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API route not found")
+    
+    # Para qualquer outra rota, retorna o index.html (SPA routing)
+    if os.path.exists(f"{FRONTEND_DIST_DIR}/index.html"):
+        from fastapi.responses import FileResponse
+        return FileResponse(f"{FRONTEND_DIST_DIR}/index.html")
+    
+    raise HTTPException(status_code=404, detail="Not Found")
 
 if __name__ == "__main__":
     import uvicorn

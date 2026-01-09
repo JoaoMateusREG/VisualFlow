@@ -12,6 +12,7 @@ import {
   Hash, 
   GitBranch,
   Calendar,
+  Table,
   LucideIcon 
 } from 'lucide-react';
 import { CustomNodeData } from '../types';
@@ -28,7 +29,8 @@ const iconMap: Record<string, LucideIcon> = {
   Repeat,
   Hash,
   GitBranch,
-  Calendar
+  Calendar,
+  Table
 };
 
 interface CustomNodeProps extends NodeProps {

@@ -114,7 +114,11 @@ class SeleniumExecutor:
                 },
                 "profile.managed_default_content_settings": {
                     "images": 2 if self.config.headless else 1  # Bloquear imagens apenas em headless
-                }
+                },
+                "download.default_directory": os.getenv("DATA_DIR", "/app/data"),
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True
             }
             chrome_options.add_experimental_option("prefs", prefs)
             
@@ -234,6 +238,124 @@ class SeleniumExecutor:
             logger.error(f"❌ Erro no login: {str(e)}")
             return {"success": False, "error": str(e), "logs": [f"Erro no login: {str(e)}"]}
     
+    async def execute_step_open_site(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa passo de acessar site (apenas navegação)"""
+        try:
+            inputs = self.substitute_variables_in_inputs(step.inputs)
+            logs = []
+            
+            # Navegar para URL
+            url = inputs.get('url', '')
+            if not url:
+                return {"success": False, "error": "URL não informada", "logs": ["Erro: URL não informada"]}
+            
+            logger.info(f"🌐 Navegando para: {url}")
+            self.driver.get(url)
+            self.driver.maximize_window()
+            logs.append(f"Navegou para: {url}")
+            
+            # Aguardar tempo especificado
+            wait_time = float(inputs.get('wait_time', 0))
+            if wait_time > 0:
+                logger.info(f"⏳ Aguardando {wait_time} segundos...")
+                await asyncio.sleep(wait_time)
+                logs.append(f"Aguardou {wait_time} segundos")
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao acessar site: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro ao acessar site: {str(e)}"]}
+    
+    async def execute_step_capture_table(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa passo de captura de tabela HTML"""
+        try:
+            inputs = self.substitute_variables_in_inputs(step.inputs)
+            logs = []
+            
+            selector_type = inputs.get('selector_type', 'xpath')
+            selector_value = inputs.get('selector_value', '')
+            variable_name = inputs.get('variable_name', 'df_table')
+            include_headers = inputs.get('include_headers', 'false') == 'true'
+            wait_condition = inputs.get('wait_condition', 'presence_of_element_located')
+            wait_timeout = int(inputs.get('wait_timeout', 10))
+            skip_empty_rows = inputs.get('skip_empty_rows', 'false') == 'true'
+            
+            if not selector_value:
+                return {"success": False, "error": "Seletor da tabela não informado"}
+            
+            by_type = self._get_by_type(selector_type)
+            condition = self._get_expected_condition(wait_condition)
+            
+            logger.info(f"📊 Aguardando tabela: {selector_value}")
+            
+            # Aguardar tabela estar presente
+            table_element = WebDriverWait(self.driver, wait_timeout).until(
+                condition((by_type, selector_value))
+            )
+            
+            # Encontrar todas as linhas (tr) dentro da tabela
+            rows = table_element.find_elements(By.TAG_NAME, 'tr')
+            logs.append(f"Tabela encontrada com {len(rows)} linhas")
+            
+            # Lista para armazenar dados
+            table_data = []
+            
+            # Processar cada linha
+            for row_index, row in enumerate(rows):
+                # Encontrar todas as células (td ou th) na linha
+                cells = row.find_elements(By.TAG_NAME, 'td')
+                if not cells:
+                    # Se não houver td, tentar th (cabeçalho)
+                    cells = row.find_elements(By.TAG_NAME, 'th')
+                
+                # Extrair texto de cada célula
+                row_data = [cell.text.strip() for cell in cells]
+                
+                # Pular linhas vazias se solicitado
+                if skip_empty_rows and not any(row_data):
+                    continue
+                
+                # Se for a primeira linha e include_headers for True, usar como cabeçalho
+                if row_index == 0 and include_headers and cells:
+                    # Verificar se são células de cabeçalho (th)
+                    if cells[0].tag_name.lower() == 'th':
+                        # Esta linha será o cabeçalho do DataFrame
+                        table_data.append(row_data)
+                    else:
+                        # Adicionar linha normal
+                        table_data.append(row_data)
+                else:
+                    # Adicionar linha normal
+                    table_data.append(row_data)
+            
+            # Criar DataFrame usando pandas_executor
+            import pandas as pd
+            df = pd.DataFrame(table_data)
+            
+            # Se include_headers e houver dados, usar primeira linha como cabeçalho
+            if include_headers and len(df) > 0:
+                df.columns = df.iloc[0]
+                df = df[1:].reset_index(drop=True)
+            
+            # Armazenar DataFrame no pandas_executor
+            self.pandas_executor.dataframes[variable_name] = df
+            self.pandas_executor.variables[variable_name] = df
+            
+            logs.append(f"Tabela capturada e armazenada em: {variable_name}")
+            logs.append(f"Dimensões: {df.shape[0]} linhas x {df.shape[1]} colunas")
+            
+            if len(df) > 0:
+                logs.append(f"Colunas: {', '.join(df.columns.astype(str).tolist())}")
+            
+            logger.info(f"✅ Tabela capturada: {df.shape[0]} linhas, {df.shape[1]} colunas")
+            
+            return {"success": True, "logs": logs, "rows_captured": len(df), "columns": df.shape[1]}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro ao capturar tabela: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro ao capturar tabela: {str(e)}"]}
+    
     async def execute_step_click(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa passo de clique em elemento"""
         try:
@@ -264,15 +386,36 @@ class SeleniumExecutor:
                 logs.append("Rolou até o elemento")
                 await asyncio.sleep(0.5)
             
-            # Clicar
-            if inputs.get('double_click') == 'true':
-                ActionChains(self.driver).double_click(element).perform()
-                logs.append(f"Duplo clique em: {selector_value}")
-                logger.info(f"🖱️ Duplo clique executado em: {selector_value}")
+            # Verificar se é seleção de opção em select
+            option_index = inputs.get('option_index')
+            if option_index is not None:
+                # É um select, selecionar opção pelo índice
+                try:
+                    # Substituir variável se necessário
+                    if isinstance(option_index, str) and option_index.startswith('${'):
+                        var_name = option_index[2:-1]
+                        option_index = self.pandas_executor.get_variable_value(var_name, 0)
+                    
+                    option_index = int(option_index)
+                    options = element.find_elements(By.TAG_NAME, 'option')
+                    if option_index < len(options):
+                        options[option_index].click()
+                        logs.append(f"Selecionou opção {option_index} do select (total: {len(options)})")
+                        logger.info(f"✅ Selecionou opção {option_index} do select")
+                    else:
+                        return {"success": False, "error": f"Índice de opção inválido: {option_index} (total: {len(options)})"}
+                except Exception as e:
+                    return {"success": False, "error": f"Erro ao selecionar opção: {str(e)}"}
             else:
-                element.click()
-                logs.append(f"Clicou em: {selector_value}")
-                logger.info(f"🖱️ Clique executado em: {selector_value}")
+                # Clicar normalmente
+                if inputs.get('double_click') == 'true':
+                    ActionChains(self.driver).double_click(element).perform()
+                    logs.append(f"Duplo clique em: {selector_value}")
+                    logger.info(f"🖱️ Duplo clique executado em: {selector_value}")
+                else:
+                    element.click()
+                    logs.append(f"Clicou em: {selector_value}")
+                    logger.info(f"🖱️ Clique executado em: {selector_value}")
             
             # Pausa após clique
             pause_after = inputs.get('pause_after', '0')
@@ -524,6 +667,109 @@ class SeleniumExecutor:
             logger.error(f"❌ Erro no agendamento: {str(e)}")
             return {"success": False, "error": str(e), "logs": [f"Erro no agendamento: {str(e)}"]}
     
+    async def execute_step_execute_script(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa JavaScript customizado na página"""
+        try:
+            inputs = self.substitute_variables_in_inputs(step.inputs)
+            logs = []
+            
+            script = inputs.get('script', '')
+            variable_name = inputs.get('variable_name', '') # Opcional, para salvar retorno
+            
+            if not script:
+                return {"success": False, "error": "Script não informado"}
+                
+            logger.info("📜 Executando JavaScript customizado...")
+            
+            # Executar script
+            result = self.driver.execute_script(script)
+            
+            logs.append("Script executado com sucesso")
+            
+            if variable_name:
+                self.pandas_executor.variables[variable_name] = result
+                logs.append(f"Retorno salvo na variável: {variable_name} = {result}")
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro na execução de script: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro na execução de script: {str(e)}"]}
+
+    async def execute_step_extract_text(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Extrai texto de elemento usando Regex"""
+        try:
+            inputs = self.substitute_variables_in_inputs(step.inputs)
+            logs = []
+            
+            selector_type = inputs.get('selector_type', 'xpath')
+            selector_value = inputs.get('selector_value', '')
+            regex_pattern = inputs.get('regex_pattern', '')
+            variable_name = inputs.get('variable_name', 'extracted_text')
+            wait_timeout = int(inputs.get('wait_timeout', 10))
+            
+            # Se true, procura em todo outerHTML/text do body se falhar o seletor
+            fallback_to_body = inputs.get('fallback_to_body', 'false') == 'true' 
+            
+            extracted_value = None
+            
+            # Tentar extrair do elemento específico
+            if selector_value:
+                try:
+                    by_type = self._get_by_type(selector_type)
+                    element = WebDriverWait(self.driver, wait_timeout).until(
+                        EC.presence_of_element_located((by_type, selector_value))
+                    )
+                    text_content = element.text
+                    logs.append(f"Texto obtido do elemento: {text_content[:50]}...")
+                    
+                    if regex_pattern:
+                        import re
+                        match = re.search(regex_pattern, text_content)
+                        if match:
+                            # Se tiver grupos, pega o primeiro grupo, senão pega tudo
+                            if match.groups():
+                                extracted_value = match.group(1)
+                            else:
+                                extracted_value = match.group(0)
+                            logs.append(f"Regex match: {extracted_value}")
+                        else:
+                            logs.append("Regex não encontrou correspondência no elemento.")
+                    else:
+                        extracted_value = text_content
+                        
+                except Exception as e:
+                    logs.append(f"Erro ao extrair do seletor: {str(e)}")
+            
+            # Fallback para o body se necessário
+            if extracted_value is None and fallback_to_body:
+                logger.info("⚠️ Tentando fallback no body...")
+                try:
+                    body_text = self.driver.find_element(By.TAG_NAME, 'body').text
+                    import re
+                    match = re.search(regex_pattern, body_text, re.IGNORECASE)
+                    if match:
+                         if match.groups():
+                            extracted_value = match.group(1)
+                         else:
+                            extracted_value = match.group(0)
+                         logs.append(f"Regex match no BODY: {extracted_value}")
+                    else:
+                        logs.append("Regex não encontrou correspondência no BODY.")
+                except Exception as e:
+                    logs.append(f"Erro no fallback do body: {str(e)}")
+
+            if extracted_value is not None:
+                self.pandas_executor.variables[variable_name] = extracted_value
+                logs.append(f"Valor extraído salvo em '{variable_name}': {extracted_value}")
+                return {"success": True, "logs": logs}
+            else:
+                return {"success": False, "error": "Não foi possível extrair o texto desejado", "logs": logs}
+
+        except Exception as e:
+            logger.error(f"❌ Erro na extração de texto: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro na extração de texto: {str(e)}"]}
+
     async def execute_step_condition(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa passo de condição"""
         return await self.pandas_executor.execute_step_condition(step)
@@ -531,6 +777,56 @@ class SeleniumExecutor:
     async def execute_step_loop_while(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa passo de loop while"""
         return await self.pandas_executor.execute_step_loop_while(step)
+
+    async def execute_step_python(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa código Python arbitrário (generic/white-label)"""
+        try:
+            inputs = step.inputs
+            # Não fazemos substituição automática de variáveis aqui para não quebrar sintaxe python
+            # O usuário acessa variáveis via dicionário 'variables'
+            
+            code = inputs.get('code', '')
+            
+            if not code:
+                return {"success": False, "error": "Código Python não informado"}
+                
+            logger.info("🐍 Executando código Python customizado...")
+            
+            # Preparar contexto
+            context = {
+                'driver': self.driver,
+                'variables': self.pandas_executor.variables,
+                'dataframes': self.pandas_executor.dataframes,
+                'pd': __import__('pandas'),
+                'time': __import__('time'),
+                're': __import__('re'),
+                'WebDriverWait': WebDriverWait,
+                'By': By,
+                'EC': EC,
+                'logger': logger,
+                'print': print
+            }
+            
+            # Capturar stdout
+            import io
+            from contextlib import redirect_stdout
+            f = io.StringIO()
+            
+            # Executar código
+            with redirect_stdout(f):
+                exec(code, context)
+            
+            output = f.getvalue()
+            logs = [line for line in output.split('\n') if line]
+            logs.append("Código Python executado com sucesso")
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro na execução de Python: {str(e)}")
+            import traceback
+            trace_str = traceback.format_exc()
+            return {"success": False, "error": str(e), "logs": [f"Erro Python: {str(e)}", trace_str]}
     
     def substitute_variables_in_inputs(self, inputs: Dict[str, str]) -> Dict[str, str]:
         """Substitui variáveis nos inputs usando o pandas_executor"""
@@ -541,6 +837,108 @@ class SeleniumExecutor:
             else:
                 substituted[key] = value
         return substituted
+    
+    def _find_loop_body(self, loop_step_id: str, execution_order: List[FlowExecutionStep], edges: List[Dict]) -> List[int]:
+        """Encontra os índices dos passos que estão dentro do loop"""
+        # Criar mapa de edges (source -> [targets])
+        edge_map = {}
+        for edge in edges:
+            source = edge.get('source', '')
+            target = edge.get('target', '')
+            if source not in edge_map:
+                edge_map[source] = []
+            edge_map[source].append(target)
+        
+        # Criar mapa reverso (target -> [sources])
+        reverse_edge_map = {}
+        for edge in edges:
+            source = edge.get('source', '')
+            target = edge.get('target', '')
+            if target not in reverse_edge_map:
+                reverse_edge_map[target] = []
+            reverse_edge_map[target].append(source)
+        
+        # Encontrar índice do loop
+        loop_index = None
+        for i, step in enumerate(execution_order):
+            if step.id == loop_step_id:
+                loop_index = i
+                break
+        
+        if loop_index is None:
+            return []
+        
+        # Encontrar todos os passos que são alcançáveis a partir do loop
+        # usando BFS a partir do loop
+        loop_body_indices = []
+        visited = set()
+        queue = [loop_step_id]
+        
+        while queue:
+            current_id = queue.pop(0)
+            if current_id in visited:
+                continue
+            visited.add(current_id)
+            
+            # Encontrar índice do passo atual
+            current_index = None
+            for idx, step in enumerate(execution_order):
+                if step.id == current_id:
+                    current_index = idx
+                    break
+            
+            # Se o passo está depois do loop na ordem de execução, adicionar ao corpo do loop
+            if current_index is not None and current_index > loop_index:
+                # Verificar se este passo não é alcançável diretamente a partir de passos antes do loop
+                # (exceto através do loop)
+                is_directly_connected_to_pre_loop = False
+                if current_id in reverse_edge_map:
+                    for source in reverse_edge_map[current_id]:
+                        # Encontrar índice da source
+                        source_index = None
+                        for idx, step in enumerate(execution_order):
+                            if step.id == source:
+                                source_index = idx
+                                break
+                        # Se a source está antes do loop, este passo não está no loop
+                        if source_index is not None and source_index < loop_index:
+                            is_directly_connected_to_pre_loop = True
+                            break
+                
+                if not is_directly_connected_to_pre_loop and current_index not in loop_body_indices:
+                    loop_body_indices.append(current_index)
+            
+            # Adicionar próximos passos à fila
+            if current_id in edge_map:
+                for next_id in edge_map[current_id]:
+                    if next_id not in visited:
+                        queue.append(next_id)
+        
+        return sorted(loop_body_indices)
+    
+    def _is_reachable(self, start_id: str, target_id: str, edge_map: Dict) -> bool:
+        """Verifica se target_id é alcançável a partir de start_id"""
+        if start_id == target_id:
+            return True
+        
+        visited = set()
+        queue = [start_id]
+        
+        while queue:
+            current = queue.pop(0)
+            if current in visited:
+                continue
+            visited.add(current)
+            
+            if current == target_id:
+                return True
+            
+            if current in edge_map:
+                for next_node in edge_map[current]:
+                    if next_node not in visited:
+                        queue.append(next_node)
+        
+        return False
     
     async def execute_flow_async(self, flow_data: FlowData, execution_id: str) -> AsyncGenerator[Dict[str, Any], None]:
         """Executa o fluxo completo de forma assíncrona"""
@@ -553,10 +951,14 @@ class SeleniumExecutor:
             return
         
         try:
-            total_steps = len(flow_data.executionOrder)
+            execution_order = flow_data.executionOrder
+            edges = flow_data.rawData.get('edges', [])
+            total_steps = len(execution_order)
             logger.info(f"📋 Total de passos: {total_steps}")
             
-            for i, step in enumerate(flow_data.executionOrder):
+            i = 0
+            while i < total_steps:
+                step = execution_order[i]
                 logger.info(f"🔄 Executando passo {i + 1}/{total_steps}: {step.label}")
                 
                 yield {
@@ -564,31 +966,83 @@ class SeleniumExecutor:
                     "logs": [f"Executando passo {i + 1}/{total_steps}: {step.label}"]
                 }
                 
-                # Executar passo baseado no tipo
-                if step.type == NodeType.LOGIN:
-                    result = await self.execute_step_login(step)
-                elif step.type == NodeType.CLICK_BUTTON:
-                    result = await self.execute_step_click(step)
-                elif step.type == NodeType.EXTRACT_TABLE:
-                    result = await self.execute_step_input_text(step)
-                elif step.type == NodeType.WAIT:
-                    result = await self.execute_step_wait(step)
-                elif step.type == NodeType.SLEEP:
-                    result = await self.execute_step_sleep(step)
-                elif step.type == NodeType.SPREADSHEET:
-                    result = await self.execute_step_spreadsheet(step)
-                elif step.type == NodeType.VARIABLE:
-                    result = await self.execute_step_variable(step)
-                elif step.type == NodeType.LOOP_FOR:
+                # Se for um loop, executar o corpo do loop
+                if step.type == NodeType.LOOP_FOR:
+                    # Iniciar o loop
                     result = await self.execute_step_loop_for(step)
-                elif step.type == NodeType.LOOP_WHILE:
-                    result = await self.execute_step_loop_while(step)
-                elif step.type == NodeType.CONDITION:
-                    result = await self.execute_step_condition(step)
-                elif step.type == NodeType.SCHEDULE:
-                    result = await self.execute_step_schedule(step)
-                else:
-                    result = {"success": False, "error": f"Tipo de passo não suportado: {step.type}"}
+                    
+                    if not result.get("success"):
+                        logger.error(f"❌ Falha ao iniciar loop: {result.get('error', 'Erro desconhecido')}")
+                        yield {
+                            "error": result.get("error", "Erro desconhecido"),
+                            "logs": result.get("logs", [])
+                        }
+                        return
+                    
+                    # Encontrar passos dentro do loop
+                    loop_body_indices = self._find_loop_body(step.id, execution_order, edges)
+                    
+                    if not loop_body_indices:
+                        logger.warning(f"⚠️ Nenhum passo encontrado dentro do loop {step.id}")
+                        i += 1
+                        continue
+                    
+                    logger.info(f"🔄 Loop iniciado: {len(loop_body_indices)} passos dentro do loop")
+                    
+                    # Executar loop até terminar
+                    iteration = 0
+                    while self.pandas_executor.should_continue_loop():
+                        iteration += 1
+                        logger.info(f"🔄 Iteração {iteration} do loop")
+                        
+                        # Avançar loop (define variável de iteração)
+                        advance_result = self.pandas_executor.advance_loop()
+                        if not advance_result.get("continue_loop", False):
+                            break
+                        
+                        # Executar todos os passos dentro do loop
+                        for loop_step_idx in loop_body_indices:
+                            if loop_step_idx >= len(execution_order):
+                                continue
+                                
+                            loop_step = execution_order[loop_step_idx]
+                            logger.info(f"  ↳ Executando passo do loop: {loop_step.label}")
+                            
+                            yield {
+                                "current_step": i + 1,
+                                "logs": [f"Iteração {iteration} - {loop_step.label}"]
+                            }
+                            
+                            # Executar passo dentro do loop
+                            loop_result = await self._execute_step(loop_step)
+                            
+                            if not loop_result.get("success"):
+                                logger.error(f"❌ Erro no passo do loop: {loop_result.get('error')}")
+                                yield {
+                                    "error": loop_result.get("error", "Erro desconhecido"),
+                                    "logs": loop_result.get("logs", [])
+                                }
+                                return
+                            
+                            yield {
+                                "current_step": i + 1,
+                                "logs": loop_result.get("logs", []),
+                                "results": {f"loop_iteration_{iteration}": "success"}
+                            }
+                            
+                            await asyncio.sleep(0.3)
+                        
+                        # Verificar se loop deve continuar
+                        if not self.pandas_executor.should_continue_loop():
+                            logger.info(f"✅ Loop concluído após {iteration} iterações")
+                            break
+                    
+                    # Avançar para próximo passo após o loop
+                    i += 1
+                    continue
+                
+                # Executar passo normal
+                result = await self._execute_step(step)
                 
                 # Enviar resultado do passo
                 if result["success"]:
@@ -608,11 +1062,51 @@ class SeleniumExecutor:
                 
                 # Pequena pausa entre passos
                 await asyncio.sleep(0.5)
+                i += 1
             
             logger.info("🎉 Fluxo executado com sucesso!")
             
         finally:
             self._cleanup_driver()
+    
+    async def _execute_step(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa um passo individual"""
+        if step.type == NodeType.LOGIN:
+            return await self.execute_step_login(step)
+        elif step.type == NodeType.OPEN_SITE:
+            return await self.execute_step_open_site(step)
+        elif step.type == NodeType.CLICK_BUTTON:
+            return await self.execute_step_click(step)
+        elif step.type == NodeType.EXTRACT_TABLE:
+            return await self.execute_step_input_text(step)
+        elif step.type == NodeType.CAPTURE_TABLE:
+            return await self.execute_step_capture_table(step)
+        elif step.type == NodeType.WAIT:
+            return await self.execute_step_wait(step)
+        elif step.type == NodeType.SLEEP:
+            return await self.execute_step_sleep(step)
+        elif step.type == NodeType.SPREADSHEET:
+            return await self.execute_step_spreadsheet(step)
+        elif step.type == NodeType.VARIABLE:
+            return await self.execute_step_variable(step)
+        elif step.type == NodeType.LOOP_WHILE:
+            return await self.execute_step_loop_while(step)
+        elif step.type == NodeType.CONDITION:
+            return await self.execute_step_condition(step)
+        elif step.type == NodeType.SCHEDULE:
+            return await self.execute_step_schedule(step)
+        elif step.type == NodeType.EXECUTE_SCRIPT:
+            return await self.execute_step_execute_script(step)
+        elif step.type == NodeType.EXTRACT_TEXT:
+            return await self.execute_step_extract_text(step)
+        elif step.type == NodeType.TRANSFORM_COLUMN:
+            return await self.pandas_executor.execute_step_transform_column(step)
+        elif step.type == NodeType.GROUP_DATA:
+            return await self.pandas_executor.execute_step_group_data(step)
+        elif step.type == NodeType.EXECUTE_PYTHON:
+            return await self.execute_step_python(step)
+        else:
+            return {"success": False, "error": f"Tipo de passo não suportado: {step.type}"}
     
     def validate_flow(self, flow_data: FlowData) -> Dict[str, Any]:
         """Valida um fluxo sem executar"""
@@ -632,6 +1126,10 @@ class SeleniumExecutor:
                 if not step.inputs.get('username_selector'):
                     warnings.append(f"Passo {step_num}: Seletor de usuário não configurado")
                     
+            elif step.type == NodeType.OPEN_SITE:
+                if not step.inputs.get('url'):
+                    errors.append(f"Passo {step_num}: URL é obrigatória")
+                    
             elif step.type == NodeType.CLICK_BUTTON:
                 if not step.inputs.get('selector_value'):
                     errors.append(f"Passo {step_num}: Seletor é obrigatório")
@@ -641,6 +1139,12 @@ class SeleniumExecutor:
                     errors.append(f"Passo {step_num}: Seletor é obrigatório")
                 if not step.inputs.get('text_value'):
                     warnings.append(f"Passo {step_num}: Texto a inserir não configurado")
+                    
+            elif step.type == NodeType.CAPTURE_TABLE:
+                if not step.inputs.get('selector_value'):
+                    errors.append(f"Passo {step_num}: Seletor da tabela é obrigatório")
+                if not step.inputs.get('variable_name'):
+                    warnings.append(f"Passo {step_num}: Nome da variável não configurado")
                     
             elif step.type == NodeType.WAIT:
                 wait_type = step.inputs.get('wait_type', 'time')

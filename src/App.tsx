@@ -32,8 +32,10 @@ type CustomNodeType = Node<CustomNodeData>;
 
 const nodeTypes: NodeTypes = {
   [NodeType.LOGIN]: CustomNode,
+  [NodeType.OPEN_SITE]: CustomNode,
   [NodeType.CLICK_BUTTON]: CustomNode,
   [NodeType.EXTRACT_TABLE]: CustomNode,
+  [NodeType.CAPTURE_TABLE]: CustomNode,
   [NodeType.WAIT]: CustomNode,
   [NodeType.SLEEP]: CustomNode,
   [NodeType.SPREADSHEET]: CustomNode,
@@ -42,6 +44,11 @@ const nodeTypes: NodeTypes = {
   [NodeType.VARIABLE]: CustomNode,
   [NodeType.CONDITION]: CustomNode,
   [NodeType.SCHEDULE]: CustomNode,
+  [NodeType.EXECUTE_SCRIPT]: CustomNode,
+  [NodeType.EXTRACT_TEXT]: CustomNode,
+  [NodeType.TRANSFORM_COLUMN]: CustomNode,
+  [NodeType.GROUP_DATA]: CustomNode,
+  [NodeType.EXECUTE_PYTHON]: CustomNode,
 };
 
 const defaultEdgeOptions: DefaultEdgeOptions = {
@@ -80,10 +87,100 @@ const App: React.FC = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  const handleNodeDataChange = useCallback((nodeId: string, inputName: string, value: string) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          const updatedNode = {
+            ...node,
+            data: {
+              ...node.data,
+              inputs: {
+                ...node.data.inputs,
+                [inputName]: value,
+              },
+            },
+          };
+          
+          // Atualizar o node selecionado se for o mesmo
+          if (selectedNode && selectedNode.id === nodeId) {
+            setSelectedNode(updatedNode);
+          }
+          
+          return updatedNode;
+        }
+        return node;
+      })
+    );
+  }, [setNodes, selectedNode]);
+
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
 
+      // Check if a file is being dropped (workflow JSON import)
+      const files = event.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        if (file.type === 'application/json' || file.name.endsWith('.json')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const result = e.target?.result as string;
+              const flowData = JSON.parse(result);
+              
+              // Try to load from different workflow formats
+              let nodesData = null;
+              let edgesData = null;
+              let name = 'Workflow Importado';
+              
+              // Format 1: Direct rawData (exported from app)
+              if (flowData.rawData?.nodes && flowData.rawData?.edges) {
+                nodesData = flowData.rawData.nodes;
+                edgesData = flowData.rawData.edges;
+                name = flowData.metadata?.name || name;
+              }
+              // Format 2: SavedWorkflow from backend
+              else if (flowData.flow_data?.rawData?.nodes) {
+                nodesData = flowData.flow_data.rawData.nodes;
+                edgesData = flowData.flow_data.rawData.edges;
+                name = flowData.metadata?.name || name;
+              }
+              // Format 3: Direct nodes/edges
+              else if (flowData.nodes && flowData.edges) {
+                nodesData = flowData.nodes;
+                edgesData = flowData.edges;
+              }
+              
+              if (nodesData && edgesData) {
+                const restoredNodes: CustomNodeType[] = nodesData.map((node: CustomNodeType) => ({
+                  ...node,
+                  data: {
+                    ...node.data,
+                    onDataChange: handleNodeDataChange
+                  }
+                }));
+                
+                setNodes(restoredNodes);
+                setEdges(edgesData);
+                setWorkflowName(name);
+                setSelectedNode(null);
+                execution.clearExecution();
+                alert(`Workflow "${name}" importado com sucesso!`);
+              } else {
+                alert('Arquivo de workflow inválido! Estrutura não reconhecida.');
+              }
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
+              alert('Erro ao importar workflow: ' + errorMessage);
+            }
+          };
+          reader.readAsText(file);
+          return;
+        }
+      }
+
+      // Handle node type drop from sidebar
       const type = event.dataTransfer.getData('application/reactflow') as NodeType;
       if (!type || !Object.values(NodeType).includes(type)) {
         return;
@@ -113,35 +210,9 @@ const App: React.FC = () => {
 
       setNodes((nds) => [...nds, newNode]);
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, setEdges, handleNodeDataChange, execution]
   );
 
-  const handleNodeDataChange = useCallback((nodeId: string, inputName: string, value: string) => {
-    setNodes((nds) =>
-      nds.map((node) => {
-        if (node.id === nodeId) {
-          const updatedNode = {
-            ...node,
-            data: {
-              ...node.data,
-              inputs: {
-                ...node.data.inputs,
-                [inputName]: value,
-              },
-            },
-          };
-          
-          // Atualizar o node selecionado se for o mesmo
-          if (selectedNode && selectedNode.id === nodeId) {
-            setSelectedNode(updatedNode);
-          }
-          
-          return updatedNode;
-        }
-        return node;
-      })
-    );
-  }, [setNodes, selectedNode]);
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     const customNode = nodes.find(n => n.id === node.id);
@@ -583,6 +654,7 @@ finally:
             defaultEdgeOptions={defaultEdgeOptions}
             fitView
             className="bg-gray-900"
+            deleteKeyCode={['Backspace', 'Delete']}
           >
             <Controls 
               className="bg-gray-800 border border-gray-600"

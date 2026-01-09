@@ -11,6 +11,15 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
+    # Configurar DATA_DIR para execução local (raiz do projeto/visualflow_data)
+    # Isso garante que localmente usemos a mesma estrutura de pastas que o Docker volume
+    if not os.getenv("DATA_DIR"):
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_dir = os.path.join(project_root, "visualflow_data")
+        os.makedirs(data_dir, exist_ok=True)
+        os.environ["DATA_DIR"] = data_dir
+        print(f"📂 Diretório de dados configurado para: {data_dir}")
+
     print("🚀 Iniciando VisualFlow Backend...")
     print("📡 API disponível em: http://localhost:8000")
     print("📚 Documentação em: http://localhost:8000/docs")

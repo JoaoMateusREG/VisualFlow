@@ -311,6 +311,32 @@ class SeleniumExecutorFallback:
         except Exception as e:
             return {"success": False, "error": str(e), "logs": [f"Erro no login: {str(e)}"]}
     
+    async def execute_step_open_site(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa passo de acessar site (apenas navegação)"""
+        try:
+            inputs = step.inputs
+            logs = []
+            
+            # Navegar para URL
+            url = inputs.get('url', '')
+            if not url:
+                return {"success": False, "error": "URL não informada", "logs": ["Erro: URL não informada"]}
+            
+            self.driver.get(url)
+            self.driver.maximize_window()
+            logs.append(f"Navegou para: {url}")
+            
+            # Aguardar tempo especificado
+            wait_time = float(inputs.get('wait_time', 0))
+            if wait_time > 0:
+                await asyncio.sleep(wait_time)
+                logs.append(f"Aguardou {wait_time} segundos")
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            return {"success": False, "error": str(e), "logs": [f"Erro ao acessar site: {str(e)}"]}
+    
     async def execute_step_click(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa passo de clique em elemento"""
         try:
@@ -339,13 +365,33 @@ class SeleniumExecutorFallback:
                 logs.append("Rolou até o elemento")
                 await asyncio.sleep(0.5)
             
-            # Clicar
-            if inputs.get('double_click') == 'true':
-                ActionChains(self.driver).double_click(element).perform()
-                logs.append(f"Duplo clique em: {selector_value}")
+            # Verificar se é seleção de opção em select
+            option_index = inputs.get('option_index')
+            if option_index is not None:
+                # É um select, selecionar opção pelo índice
+                try:
+                    # Substituir variável se necessário
+                    if isinstance(option_index, str) and option_index.startswith('${'):
+                        var_name = option_index[2:-1]
+                        option_index = self.pandas_executor.get_variable_value(var_name, 0)
+                    
+                    option_index = int(option_index)
+                    options = element.find_elements(By.TAG_NAME, 'option')
+                    if option_index < len(options):
+                        options[option_index].click()
+                        logs.append(f"Selecionou opção {option_index} do select (total: {len(options)})")
+                    else:
+                        return {"success": False, "error": f"Índice de opção inválido: {option_index} (total: {len(options)})"}
+                except Exception as e:
+                    return {"success": False, "error": f"Erro ao selecionar opção: {str(e)}"}
             else:
-                element.click()
-                logs.append(f"Clicou em: {selector_value}")
+                # Clicar normalmente
+                if inputs.get('double_click') == 'true':
+                    ActionChains(self.driver).double_click(element).perform()
+                    logs.append(f"Duplo clique em: {selector_value}")
+                else:
+                    element.click()
+                    logs.append(f"Clicou em: {selector_value}")
             
             # Pausa após clique
             pause_after = inputs.get('pause_after', '0')
@@ -473,10 +519,14 @@ class SeleniumExecutorFallback:
                 # Executar passo baseado no tipo
                 if step.type == NodeType.LOGIN:
                     result = await self.execute_step_login(step)
+                elif step.type == NodeType.OPEN_SITE:
+                    result = await self.execute_step_open_site(step)
                 elif step.type == NodeType.CLICK_BUTTON:
                     result = await self.execute_step_click(step)
                 elif step.type == NodeType.EXTRACT_TABLE:
                     result = await self.execute_step_input_text(step)
+                elif step.type == NodeType.CAPTURE_TABLE:
+                    result = await self.execute_step_capture_table(step)
                 elif step.type == NodeType.WAIT:
                     result = await self.execute_step_wait(step)
                 else:
@@ -520,6 +570,10 @@ class SeleniumExecutorFallback:
                 if not step.inputs.get('username_selector'):
                     warnings.append(f"Passo {step_num}: Seletor de usuário não configurado")
                     
+            elif step.type == NodeType.OPEN_SITE:
+                if not step.inputs.get('url'):
+                    errors.append(f"Passo {step_num}: URL é obrigatória")
+                    
             elif step.type == NodeType.CLICK_BUTTON:
                 if not step.inputs.get('selector_value'):
                     errors.append(f"Passo {step_num}: Seletor é obrigatório")
@@ -529,6 +583,12 @@ class SeleniumExecutorFallback:
                     errors.append(f"Passo {step_num}: Seletor é obrigatório")
                 if not step.inputs.get('text_value'):
                     warnings.append(f"Passo {step_num}: Texto a inserir não configurado")
+                    
+            elif step.type == NodeType.CAPTURE_TABLE:
+                if not step.inputs.get('selector_value'):
+                    errors.append(f"Passo {step_num}: Seletor da tabela é obrigatório")
+                if not step.inputs.get('variable_name'):
+                    warnings.append(f"Passo {step_num}: Nome da variável não configurado")
                     
             elif step.type == NodeType.WAIT:
                 wait_type = step.inputs.get('wait_type', 'time')

@@ -5,8 +5,10 @@ from enum import Enum
 
 class NodeType(str, Enum):
     LOGIN = "login"
+    OPEN_SITE = "openSite"
     CLICK_BUTTON = "clickButton"
     EXTRACT_TABLE = "extractTable"
+    CAPTURE_TABLE = "captureTable"
     WAIT = "wait"
     SLEEP = "sleep"
     SPREADSHEET = "spreadsheet"
@@ -16,11 +18,17 @@ class NodeType(str, Enum):
     CONDITION = "condition"
     SCHEDULE = "schedule"
 
+    EXECUTE_SCRIPT = "executeScript"
+    EXTRACT_TEXT = "extractText"
+    TRANSFORM_COLUMN = "transformColumn"
+    GROUP_DATA = "groupData"
+    EXECUTE_PYTHON = "executePython"
+
 class FlowExecutionStep(BaseModel):
     id: str
     type: NodeType
     label: str
-    inputs: Dict[str, str]
+    inputs: Dict[str, Any]
     position: Dict[str, float]
 
 class FlowValidation(BaseModel):

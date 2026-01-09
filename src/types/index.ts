@@ -2,8 +2,10 @@ import { Node, Edge } from 'reactflow';
 
 export enum NodeType {
   LOGIN = 'login',
+  OPEN_SITE = 'openSite',
   CLICK_BUTTON = 'clickButton',
   EXTRACT_TABLE = 'extractTable',
+  CAPTURE_TABLE = 'captureTable',
   WAIT = 'wait',
   SLEEP = 'sleep',
   SPREADSHEET = 'spreadsheet',
@@ -11,7 +13,12 @@ export enum NodeType {
   LOOP_WHILE = 'loopWhile',
   VARIABLE = 'variable',
   CONDITION = 'condition',
-  SCHEDULE = 'schedule'
+  SCHEDULE = 'schedule',
+  EXECUTE_SCRIPT = 'executeScript',
+  EXTRACT_TEXT = 'extractText',
+  TRANSFORM_COLUMN = 'transformColumn',
+  GROUP_DATA = 'groupData',
+  EXECUTE_PYTHON = 'executePython'
 }
 
 export interface SelectOption {
@@ -25,10 +32,13 @@ export interface NodeInput {
   type: 'text' | 'password' | 'number' | 'select' | 'checkbox';
   placeholder: string;
   options?: SelectOption[];
+  helpText?: string;
+  required?: boolean;
 }
 
 export interface NodeConfig {
   label: string;
+  description?: string;
   icon: string;
   color: string;
   inputs: NodeInput[];

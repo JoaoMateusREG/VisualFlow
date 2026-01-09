@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { X, Settings, Code, Info } from 'lucide-react';
+import { X, Settings, Code, Info, HelpCircle } from 'lucide-react';
 import { CustomNode, NodeInput } from '../types';
 import { getNodeConfig } from '../types/nodeTypes';
 
@@ -153,6 +153,27 @@ element.send_keys("${inputs.text_value || 'texto'}")
 ${inputs.press_enter === 'true' ? 'element.send_keys(Keys.RETURN)' : ''}
 ${inputs.pause_after ? `time.sleep(${inputs.pause_after})` : ''}`;
 
+      case 'captureTable':
+        return `# Capturar tabela HTML
+table_element = WebDriverWait(driver, ${inputs.wait_timeout || 10}).until(
+    EC.${inputs.wait_condition || 'presence_of_element_located'}((By.${inputs.selector_type?.toUpperCase() || 'XPATH'}, "${inputs.selector_value || '//table'}"))
+)
+
+# Extrair linhas e células
+rows = table_element.find_elements(By.TAG_NAME, 'tr')
+table_data = []
+for row in rows:
+    cells = row.find_elements(By.TAG_NAME, 'td')
+    if not cells:
+        cells = row.find_elements(By.TAG_NAME, 'th')
+    row_data = [cell.text.strip() for cell in cells]
+    ${inputs.skip_empty_rows === 'true' ? 'if any(row_data): table_data.append(row_data)' : 'table_data.append(row_data)'}
+
+# Criar DataFrame
+${inputs.variable_name || 'df_table'} = pd.DataFrame(table_data)
+${inputs.include_headers === 'true' ? `\n# Usar primeira linha como cabeçalho\n${inputs.variable_name || 'df_table'}.columns = ${inputs.variable_name || 'df_table'}.iloc[0]\n${inputs.variable_name || 'df_table'} = ${inputs.variable_name || 'df_table'}[1:].reset_index(drop=True)` : ''}
+print(f"Tabela capturada: {len(${inputs.variable_name || 'df_table'})} linhas x {len(${inputs.variable_name || 'df_table'}.columns)} colunas")`;
+
       case 'wait':
         if (inputs.wait_type === 'time') {
           return `# Espera por tempo fixo
@@ -226,6 +247,64 @@ ${varName} = ${rowVar}["${columnName}"]`;
             return `# Operação de variável: ${varOperation}`;
         }
 
+      case 'executeScript':
+        return `# Executar JavaScript
+script = """
+${inputs.script || 'return document.title;'}
+"""
+result = driver.execute_script(script)
+${inputs.variable_name ? `variables["${inputs.variable_name}"] = result\nprint(f"Script executado. Resultado: {result}")` : 'print("Script executado")'}`;
+
+      case 'extractText':
+        return `# Extrair Texto com Regex
+element = WebDriverWait(driver, ${inputs.wait_timeout || 10}).until(
+    EC.presence_of_element_located((By.${inputs.selector_type?.toUpperCase() || 'XPATH'}, "${inputs.selector_value || '//div'}"))
+)
+text = element.text
+match = re.search(r"${inputs.regex_pattern || '(.*)'}", text)
+if match:
+    value = match.group(1) if match.groups() else match.group(0)
+    variables["${inputs.variable_name || 'texto_extraido'}"] = value
+    print(f"Texto extraído: {value}")`;
+
+      case 'transformColumn':
+        return `# Transformar Coluna
+df = dataframes["${inputs.dataframe_variable || 'df'}"]
+col = "${inputs.column_name || 'coluna'}"
+new_col = "${inputs.new_column_name || inputs.column_name || 'coluna'}"
+
+if "${inputs.transformation_type}" == "first_letter_upper":
+    df[new_col] = df[col].astype(str).str.title()
+elif "${inputs.transformation_type}" == "parse_list":
+    # Exemplo: converte string "['a','b']" para lista real
+    import ast
+    df[new_col] = df[col].apply(lambda x: ast.literal_eval(x) if isinstance(x, str) else x)
+elif "${inputs.transformation_type}" == "limit_list":
+    limit = ${inputs.limit || 4}
+    df[new_col] = df[col].apply(lambda x: x[:limit] if isinstance(x, list) else x)
+elif "${inputs.transformation_type}" == "to_string":
+    df[new_col] = df[col].astype(str)
+
+dataframes["${inputs.dataframe_variable || 'df'}"] = df`;
+
+      case 'groupData':
+        return `# Agrupar Dados
+df = dataframes["${inputs.dataframe_variable || 'df'}"]
+grouped = df.groupby("${inputs.group_by_column || 'coluna'}")
+# Aplicar agregações (exemplo simplificado)
+result = grouped.agg({
+    # Mapear agregações do input...
+})
+variables["${inputs.output_variable || 'df_agrupado'}"] = result`;
+
+      case 'executePython':
+        return `# Executar Python Customizado
+# Variáveis disponíveis: driver, variables, dataframes, pd, time, re
+code = """
+${inputs.code || '# Seu código aqui'}
+"""
+exec(code)`;
+
       default:
         return '# Código será gerado baseado na configuração';
     }
@@ -239,6 +318,14 @@ ${varName} = ${rowVar}["${columnName}"]`;
           <div className="flex items-center space-x-2">
             <div className={`w-3 h-3 rounded-full ${config.color.replace('bg-', 'bg-')}`}></div>
             <h3 className="font-semibold text-white">{config.label}</h3>
+            {config.description && (
+              <div className="group relative">
+                <HelpCircle size={16} className="text-gray-400 cursor-help hover:text-white" />
+                <div className="absolute z-50 right-0 mt-2 w-64 p-2 bg-gray-900 border border-gray-600 rounded shadow-lg text-xs text-gray-200 hidden group-hover:block whitespace-normal">
+                  {config.description}
+                </div>
+              </div>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -252,12 +339,24 @@ ${varName} = ${rowVar}["${columnName}"]`;
 
       {/* Configurações */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="space-y-4">
+        <div className="space-y-4 pb-20"> {/* pb-20 gives space for last items tooltip */}
           {config.inputs.map((input) => (
-            <div key={input.name} className="space-y-2">
-              <label className="block text-sm font-medium text-gray-300">
-                {input.label}
-              </label>
+            <div key={input.name} className="space-y-2 relative hover:z-50">
+              <div className="flex items-center space-x-2">
+                <label className="block text-sm font-medium text-gray-300">
+                  {input.label}
+                  {input.required && <span className="text-red-500 ml-1" title="Obrigatório">*</span>}
+                </label>
+                {input.helpText && (
+                  <div className="group">
+                    <HelpCircle size={14} className="text-gray-500 cursor-help hover:text-blue-400" />
+                    <div className="absolute z-50 right-0 top-7 w-56 p-2 bg-gray-900 border border-gray-600 rounded shadow-xl text-xs text-gray-200 hidden group-hover:block whitespace-normal">
+                       {/* Positioned relative to the parent input container (div.relative), not the icon wrapper */}
+                      {input.helpText}
+                    </div>
+                  </div>
+                )}
+              </div>
               {renderInput(input)}
               {input.placeholder && (
                 <p className="text-xs text-gray-500">

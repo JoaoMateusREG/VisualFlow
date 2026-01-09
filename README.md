@@ -16,15 +16,51 @@
 
 O **VisualFlow** é uma plataforma completa que permite criar automações web complexas através de uma interface visual drag-and-drop, similar ao N8N ou Zapier, mas focada em automação web com Selenium e processamento de dados com Pandas.
 
-### ✨ Principais Funcionalidades
+# VisualFlow
 
-- **🎨 Interface Visual**: Drag-and-drop para criar fluxos de automação
-- **🌐 Automação Web**: Selenium integrado para interação com sites
-- **📊 Processamento de Dados**: Pandas para manipulação de planilhas Excel/CSV
-- **🔄 Estruturas de Controle**: Loops, condições e variáveis
-- **⏰ Agendamento**: Execução programada de workflows
-- **💾 Gerenciamento de Workflows**: Salvar, carregar e organizar automações
-- **🔍 Monitoramento**: Logs em tempo real e histórico de execuções
+**Visual Workflow Builder for Web Automation & Data Processing**
+
+VisualFlow abstracts the complexity of Selenium and Pandas into a drag-and-drop interface. Build automation workflows visually—like n8n or Scratch—without writing code.
+
+![VisualFlow Demo](docs/demo.gif)
+
+## Quick Start (Docker)
+
+```bash
+# Clone and run
+git clone https://github.com/yourrepo/visualflow.git
+cd visualflow
+docker-compose up --build
+```
+
+**Access at: http://localhost:8164**
+
+## Features
+
+- 🖱️ **Drag & Drop** block-based workflow builder
+- 🌐 **Web Automation** via Selenium (login, click, scrape tables)
+- 📊 **Data Processing** via Pandas (read/write Excel, group, transform)
+- 🔄 **Control Flow** with loops and conditions
+- 💾 **Save & Load** workflows as JSON
+- 🐳 **Docker Ready** with Chrome pre-installed
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [USER_MANUAL.md](USER_MANUAL.md) | How to use the application |
+| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | Architecture & contribution |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Common issues & fixes |
+
+## Data Persistence
+
+All files (downloads, spreadsheets, workflows) are saved to:
+- **Docker**: `./visualflow_data` (mapped to `/app/data`)
+- **Local**: `./visualflow_data`
+
+## License
+
+MIT
 
 ---
 

@@ -40,19 +40,70 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
     duplicateWorkflow,
     refreshWorkflows,
     exportWorkflow,
-    importWorkflow
+    importWorkflow,
+    downloadWorkflow
   } = useWorkflows();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [filteredWorkflows, setFilteredWorkflows] = useState<WorkflowMetadata[]>([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [saveForm, setSaveForm] = useState({
     name: '',
     description: '',
     tags: '',
     isTemplate: false
   });
+
+  // Drag and drop handlers for workflow import
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleFileDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        try {
+          const text = await file.text();
+          const flowData = JSON.parse(text);
+          
+          // Try different formats
+          let parsedFlowData = null;
+          if (flowData.flow_data) {
+            parsedFlowData = flowData.flow_data;
+          } else if (flowData.rawData) {
+            parsedFlowData = flowData;
+          } else if (flowData.nodes && flowData.edges) {
+            parsedFlowData = { rawData: flowData };
+          }
+          
+          if (parsedFlowData) {
+            onLoadWorkflow(parsedFlowData);
+            onClose();
+            alert('Workflow importado com sucesso via drag & drop!');
+          } else {
+            alert('Formato de workflow não reconhecido.');
+          }
+        } catch (err) {
+          alert('Erro ao processar arquivo: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
+        }
+      } else {
+        alert('Por favor, arraste um arquivo .json');
+      }
+    }
+  };
 
   // Filtrar workflows
   useEffect(() => {
@@ -249,7 +300,20 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
         </div>
 
         {/* Lista de workflows */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div 
+          className={`flex-1 overflow-y-auto p-4 transition-colors ${isDragOver ? 'bg-blue-900/30 border-2 border-dashed border-blue-500' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleFileDrop}
+        >
+          {/* Drop Zone Indicator */}
+          {isDragOver && (
+            <div className="text-center text-blue-400 py-8 mb-4 flex flex-col items-center gap-2">
+              <Upload size={48} />
+              <span className="text-lg">Solte o arquivo .json aqui para importar</span>
+            </div>
+          )}
+
           {isLoading && (
             <div className="text-center text-gray-400 py-8">
               Carregando workflows...
@@ -262,9 +326,10 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
             </div>
           )}
 
-          {!isLoading && !error && filteredWorkflows.length === 0 && (
+          {!isLoading && !error && filteredWorkflows.length === 0 && !isDragOver && (
             <div className="text-center text-gray-400 py-8">
-              Nenhum workflow encontrado
+              <p>Nenhum workflow encontrado</p>
+              <p className="text-sm mt-2">Arraste um arquivo .json aqui para importar</p>
             </div>
           )}
 
@@ -331,8 +396,17 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
                   </button>
                   
                   <button
+                    onClick={() => downloadWorkflow(workflow.id)}
+                    className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-500"
+                    title="Baixar workflow como arquivo .json"
+                  >
+                    <Download size={14} />
+                  </button>
+                  
+                  <button
                     onClick={() => handleDuplicateWorkflow(workflow.id, workflow.name)}
                     className="px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-500"
+                    title="Duplicar workflow"
                   >
                     <Copy size={14} />
                   </button>
@@ -340,6 +414,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
                   <button
                     onClick={() => handleDeleteWorkflow(workflow.id, workflow.name)}
                     className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+                    title="Deletar workflow"
                   >
                     <Trash2 size={14} />
                   </button>

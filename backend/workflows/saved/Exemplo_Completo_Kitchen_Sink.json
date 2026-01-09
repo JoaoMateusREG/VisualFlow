@@ -1,0 +1,486 @@
+{
+  "metadata": {
+    "id": "aec9a826-c309-45a1-9a66-9d7193c35c30",
+    "name": "Exemplo Completo (Kitchen Sink)",
+    "description": "Demonstração de todos os blocos disponíveis.",
+    "created_at": "2026-01-08T23:51:23.542889",
+    "updated_at": "2026-01-08T23:51:23.542890",
+    "version": "1.0.0",
+    "tags": [
+      "exemplo",
+      "completo"
+    ],
+    "author": "system",
+    "is_template": false
+  },
+  "flow_data": {
+    "metadata": {
+      "name": "Exemplo Completo (Kitchen Sink)",
+      "createdAt": "2026-01-08T23:51:23.542878",
+      "version": "1.0.0",
+      "totalSteps": 11
+    },
+    "validation": {
+      "isValid": true,
+      "errors": []
+    },
+    "executionOrder": [
+      {
+        "id": "f2a68071-11ba-4e6a-a84f-f2d8ceeab539",
+        "type": "variable",
+        "label": "1. Definir Variável",
+        "inputs": {
+          "operation": "set",
+          "variable_name": "base_url",
+          "variable_value": "https://example.com"
+        },
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "id": "9bc43454-5c8e-4e5a-a0f2-da054071b927",
+        "type": "openSite",
+        "label": "2. Abrir Site",
+        "inputs": {
+          "url": "${base_url}",
+          "wait_time": "3"
+        },
+        "position": {
+          "x": 100,
+          "y": 250
+        }
+      },
+      {
+        "id": "d2ba2eda-ceb4-4866-b889-42fcbbb87073",
+        "type": "wait",
+        "label": "3. Aguardar Título",
+        "inputs": {
+          "wait_type": "element",
+          "selector_type": "tag_name",
+          "selector_value": "h1",
+          "wait_condition": "visibility_of_element_located",
+          "timeout": "10"
+        },
+        "position": {
+          "x": 100,
+          "y": 400
+        }
+      },
+      {
+        "id": "7cb5ffbf-1df2-4a78-8852-58ccb0deb696",
+        "type": "extractText",
+        "label": "4. Extrair Domínio",
+        "inputs": {
+          "selector_type": "xpath",
+          "selector_value": "//p",
+          "regex_pattern": "Domain",
+          "variable_name": "domain_text",
+          "wait_timeout": "5",
+          "fallback_to_body": "true"
+        },
+        "position": {
+          "x": 100,
+          "y": 550
+        }
+      },
+      {
+        "id": "4468915d-4cad-4e15-8847-5c1f60b3f50d",
+        "type": "executePython",
+        "label": "5. Processar Python",
+        "inputs": {
+          "code": "print(f'Texto extraído: {variables.get(\"domain_text\", \"N/A\")}')\nvariables['processed_text'] = variables.get('domain_text', '').upper()"
+        },
+        "position": {
+          "x": 100,
+          "y": 700
+        }
+      },
+      {
+        "id": "72eb8201-f894-4a8e-8b42-8087d20e65ac",
+        "type": "condition",
+        "label": "6. Validar Texto",
+        "inputs": {
+          "condition_type": "variable_comparison",
+          "variable_name": "processed_text",
+          "comparison_operator": "!=",
+          "comparison_value": ""
+        },
+        "position": {
+          "x": 100,
+          "y": 850
+        }
+      },
+      {
+        "id": "12f7c37c-ebfc-4c9d-aad0-c8b782c16533",
+        "type": "executeScript",
+        "label": "7. Alert JS (True)",
+        "inputs": {
+          "script": "console.log('Texto validado com sucesso!'); return 'ok';"
+        },
+        "position": {
+          "x": -100,
+          "y": 1000
+        }
+      },
+      {
+        "id": "58b03661-5c29-4598-ba3c-aebb01d14cad",
+        "type": "sleep",
+        "label": "8. Pausa (False)",
+        "inputs": {
+          "duration": "2",
+          "description": "Pausa triste por falha"
+        },
+        "position": {
+          "x": 300,
+          "y": 1000
+        }
+      },
+      {
+        "id": "f61cfd3e-b97a-4ab2-a196-152f55d54646",
+        "type": "spreadsheet",
+        "label": "9. Criar Planilha",
+        "inputs": {
+          "operation": "create",
+          "variable_name": "df_results",
+          "columns": "Timestamp, Status, Result"
+        },
+        "position": {
+          "x": 100,
+          "y": 1150
+        }
+      },
+      {
+        "id": "6793c92a-693b-4372-9099-52f5bf0dd951",
+        "type": "loopFor",
+        "label": "10. Loop Demo",
+        "inputs": {
+          "loop_type": "range",
+          "start_value": "1",
+          "end_value": "4",
+          "step_value": "1"
+        },
+        "position": {
+          "x": 100,
+          "y": 1300
+        }
+      },
+      {
+        "id": "a167bbb6-ae01-40cb-8d1e-6e6189ef0dfd",
+        "type": "variable",
+        "label": "11. Add Row",
+        "inputs": {
+          "operation": "set",
+          "variable_name": "dummy_loop",
+          "variable_value": "iterating"
+        },
+        "position": {
+          "x": 150,
+          "y": 1450
+        }
+      }
+    ],
+    "rawData": {
+      "nodes": [
+        {
+          "id": "f2a68071-11ba-4e6a-a84f-f2d8ceeab539",
+          "type": "variable",
+          "data": {
+            "label": "1. Definir Variável",
+            "type": "variable",
+            "inputs": {
+              "operation": "set",
+              "variable_name": "base_url",
+              "variable_value": "https://example.com"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 100
+          }
+        },
+        {
+          "id": "9bc43454-5c8e-4e5a-a0f2-da054071b927",
+          "type": "openSite",
+          "data": {
+            "label": "2. Abrir Site",
+            "type": "openSite",
+            "inputs": {
+              "url": "${base_url}",
+              "wait_time": "3"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 250
+          }
+        },
+        {
+          "id": "d2ba2eda-ceb4-4866-b889-42fcbbb87073",
+          "type": "wait",
+          "data": {
+            "label": "3. Aguardar Título",
+            "type": "wait",
+            "inputs": {
+              "wait_type": "element",
+              "selector_type": "tag_name",
+              "selector_value": "h1",
+              "wait_condition": "visibility_of_element_located",
+              "timeout": "10"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 400
+          }
+        },
+        {
+          "id": "7cb5ffbf-1df2-4a78-8852-58ccb0deb696",
+          "type": "extractText",
+          "data": {
+            "label": "4. Extrair Domínio",
+            "type": "extractText",
+            "inputs": {
+              "selector_type": "xpath",
+              "selector_value": "//p",
+              "regex_pattern": "Domain",
+              "variable_name": "domain_text",
+              "wait_timeout": "5",
+              "fallback_to_body": "true"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 550
+          }
+        },
+        {
+          "id": "4468915d-4cad-4e15-8847-5c1f60b3f50d",
+          "type": "executePython",
+          "data": {
+            "label": "5. Processar Python",
+            "type": "executePython",
+            "inputs": {
+              "code": "print(f'Texto extraído: {variables.get(\"domain_text\", \"N/A\")}')\nvariables['processed_text'] = variables.get('domain_text', '').upper()"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 700
+          }
+        },
+        {
+          "id": "72eb8201-f894-4a8e-8b42-8087d20e65ac",
+          "type": "condition",
+          "data": {
+            "label": "6. Validar Texto",
+            "type": "condition",
+            "inputs": {
+              "condition_type": "variable_comparison",
+              "variable_name": "processed_text",
+              "comparison_operator": "!=",
+              "comparison_value": ""
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 850
+          }
+        },
+        {
+          "id": "12f7c37c-ebfc-4c9d-aad0-c8b782c16533",
+          "type": "executeScript",
+          "data": {
+            "label": "7. Alert JS (True)",
+            "type": "executeScript",
+            "inputs": {
+              "script": "console.log('Texto validado com sucesso!'); return 'ok';"
+            }
+          },
+          "position": {
+            "x": -100,
+            "y": 1000
+          }
+        },
+        {
+          "id": "58b03661-5c29-4598-ba3c-aebb01d14cad",
+          "type": "sleep",
+          "data": {
+            "label": "8. Pausa (False)",
+            "type": "sleep",
+            "inputs": {
+              "duration": "2",
+              "description": "Pausa triste por falha"
+            }
+          },
+          "position": {
+            "x": 300,
+            "y": 1000
+          }
+        },
+        {
+          "id": "f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "type": "spreadsheet",
+          "data": {
+            "label": "9. Criar Planilha",
+            "type": "spreadsheet",
+            "inputs": {
+              "operation": "create",
+              "variable_name": "df_results",
+              "columns": "Timestamp, Status, Result"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 1150
+          }
+        },
+        {
+          "id": "6793c92a-693b-4372-9099-52f5bf0dd951",
+          "type": "loopFor",
+          "data": {
+            "label": "10. Loop Demo",
+            "type": "loopFor",
+            "inputs": {
+              "loop_type": "range",
+              "start_value": "1",
+              "end_value": "4",
+              "step_value": "1"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 1300
+          }
+        },
+        {
+          "id": "a167bbb6-ae01-40cb-8d1e-6e6189ef0dfd",
+          "type": "variable",
+          "data": {
+            "label": "11. Add Row",
+            "type": "variable",
+            "inputs": {
+              "operation": "set",
+              "variable_name": "dummy_loop",
+              "variable_value": "iterating"
+            }
+          },
+          "position": {
+            "x": 150,
+            "y": 1450
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "ef2a68071-11ba-4e6a-a84f-f2d8ceeab539-9bc43454-5c8e-4e5a-a0f2-da054071b927",
+          "source": "f2a68071-11ba-4e6a-a84f-f2d8ceeab539",
+          "target": "9bc43454-5c8e-4e5a-a0f2-da054071b927",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e9bc43454-5c8e-4e5a-a0f2-da054071b927-d2ba2eda-ceb4-4866-b889-42fcbbb87073",
+          "source": "9bc43454-5c8e-4e5a-a0f2-da054071b927",
+          "target": "d2ba2eda-ceb4-4866-b889-42fcbbb87073",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "ed2ba2eda-ceb4-4866-b889-42fcbbb87073-7cb5ffbf-1df2-4a78-8852-58ccb0deb696",
+          "source": "d2ba2eda-ceb4-4866-b889-42fcbbb87073",
+          "target": "7cb5ffbf-1df2-4a78-8852-58ccb0deb696",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e7cb5ffbf-1df2-4a78-8852-58ccb0deb696-4468915d-4cad-4e15-8847-5c1f60b3f50d",
+          "source": "7cb5ffbf-1df2-4a78-8852-58ccb0deb696",
+          "target": "4468915d-4cad-4e15-8847-5c1f60b3f50d",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e4468915d-4cad-4e15-8847-5c1f60b3f50d-72eb8201-f894-4a8e-8b42-8087d20e65ac",
+          "source": "4468915d-4cad-4e15-8847-5c1f60b3f50d",
+          "target": "72eb8201-f894-4a8e-8b42-8087d20e65ac",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e72eb8201-f894-4a8e-8b42-8087d20e65ac-12f7c37c-ebfc-4c9d-aad0-c8b782c16533",
+          "source": "72eb8201-f894-4a8e-8b42-8087d20e65ac",
+          "target": "12f7c37c-ebfc-4c9d-aad0-c8b782c16533",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          },
+          "sourceHandle": "true"
+        },
+        {
+          "id": "e72eb8201-f894-4a8e-8b42-8087d20e65ac-58b03661-5c29-4598-ba3c-aebb01d14cad",
+          "source": "72eb8201-f894-4a8e-8b42-8087d20e65ac",
+          "target": "58b03661-5c29-4598-ba3c-aebb01d14cad",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          },
+          "sourceHandle": "false"
+        },
+        {
+          "id": "e12f7c37c-ebfc-4c9d-aad0-c8b782c16533-f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "source": "12f7c37c-ebfc-4c9d-aad0-c8b782c16533",
+          "target": "f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e58b03661-5c29-4598-ba3c-aebb01d14cad-f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "source": "58b03661-5c29-4598-ba3c-aebb01d14cad",
+          "target": "f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "ef61cfd3e-b97a-4ab2-a196-152f55d54646-6793c92a-693b-4372-9099-52f5bf0dd951",
+          "source": "f61cfd3e-b97a-4ab2-a196-152f55d54646",
+          "target": "6793c92a-693b-4372-9099-52f5bf0dd951",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e6793c92a-693b-4372-9099-52f5bf0dd951-a167bbb6-ae01-40cb-8d1e-6e6189ef0dfd",
+          "source": "6793c92a-693b-4372-9099-52f5bf0dd951",
+          "target": "a167bbb6-ae01-40cb-8d1e-6e6189ef0dfd",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        }
+      ],
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+      }
+    }
+  },
+  "file_path": ""
+}

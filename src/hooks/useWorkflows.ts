@@ -26,6 +26,7 @@ export interface UseWorkflowsReturn {
   // Arquivo
   exportWorkflow: (flowData: FlowData, filename?: string) => void;
   importWorkflow: () => Promise<FlowData>;
+  downloadWorkflow: (workflowId: string) => Promise<void>;
   
   // Local storage
   saveToLocal: (key: string, flowData: FlowData) => void;
@@ -253,6 +254,31 @@ export const useWorkflows = (): UseWorkflowsReturn => {
     }
   }, []);
 
+  const downloadWorkflow = useCallback(async (workflowId: string): Promise<void> => {
+    try {
+      setError(null);
+      const workflow = await workflowService.getWorkflow(workflowId);
+      
+      // Create downloadable JSON
+      const dataStr = JSON.stringify(workflow, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+      
+      // Generate filename from workflow name
+      const sanitizedName = workflow.metadata.name.replace(/[<>:"/\\|?*]/g, '_');
+      const filename = `${sanitizedName}.json`;
+      
+      // Trigger download
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', filename);
+      linkElement.click();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao baixar workflow';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    }
+  }, []);
+
   // Local storage
   const saveToLocal = useCallback((key: string, flowData: FlowData) => {
     workflowService.saveToLocalStorage(key, flowData);
@@ -283,6 +309,7 @@ export const useWorkflows = (): UseWorkflowsReturn => {
     loadAutoSave,
     exportWorkflow,
     importWorkflow,
+    downloadWorkflow,
     saveToLocal,
     loadFromLocal,
     listLocalWorkflows,

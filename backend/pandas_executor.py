@@ -27,6 +27,32 @@ class PandasExecutor:
         self.dataframes.clear()
         self.loop_stack.clear()
     
+    def _get_safe_path(self, file_path: str) -> str:
+        """
+        Garante que o caminho do arquivo esteja dentro do diretório de dados configurado.
+        Se o caminho for relativo, combina com DATA_DIR.
+        Se for absoluto, verifica se está dentro de DATA_DIR.
+        """
+        data_dir = os.getenv('DATA_DIR', '/app/data')
+        os.makedirs(data_dir, exist_ok=True)
+        
+        # Limpar caminho input
+        clean_path = file_path.strip().replace('\\', '/')
+        
+        # Se for apenas nome de arquivo ou relativo, juntar com data_dir
+        if not os.path.isabs(clean_path):
+            safe_path = os.path.join(data_dir, clean_path)
+        else:
+            # Se for absoluto, verificar se está dentro do data_dir (segurança básica)
+            # Para simplificar neste ambiente docker, vamos forçar o uso do data_dir
+            # se o usuário tentar salvar em /tmp ou coisa parecida, vamos redirecionar
+            # ou confiar se for explicitamente desejado.
+            # Mas a proposta principal é persistência: então forçar data_dir para arquivos "do usuário"
+            base_name = os.path.basename(clean_path)
+            safe_path = os.path.join(data_dir, base_name)
+            
+        return safe_path
+
     async def execute_step_spreadsheet(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa operações com planilhas"""
         try:
@@ -34,16 +60,20 @@ class PandasExecutor:
             logs = []
             
             operation = inputs.get('operation', 'read')
-            file_path = inputs.get('file_path', 'dados.xlsx')
+            raw_file_path = inputs.get('file_path', 'dados.xlsx')
             sheet_name = inputs.get('sheet_name', 'Sheet1')
             variable_name = inputs.get('variable_name', 'df')
             
-            logger.info(f"📊 Operação de planilha: {operation}")
+            # Resolver caminho seguro
+            file_path = self._get_safe_path(raw_file_path)
+            logs.append(f"Caminho do arquivo resolvido: {file_path}")
+            
+            logger.info(f"📊 Operação de planilha: {operation} em {file_path}")
             
             if operation == 'read':
                 # Ler planilha
                 if not os.path.exists(file_path):
-                    return {"success": False, "error": f"Arquivo não encontrado: {file_path}"}
+                    return {"success": False, "error": f"Arquivo não encontrado: {file_path} (original: {raw_file_path})"}
                 
                 if file_path.lower().endswith('.csv'):
                     df = pd.read_csv(file_path)
@@ -90,14 +120,43 @@ class PandasExecutor:
                 
                 df = self.dataframes[variable_name]
                 
-                # Criar diretório se não existir
+                # Criar diretório se não existir (garantia redundante mas segura)
                 Path(file_path).parent.mkdir(parents=True, exist_ok=True)
                 
+                # Opções adicionais de salvamento
+                include_index = inputs.get('include_index', 'false') == 'true'
+                header = inputs.get('include_header', 'true') != 'false'  # Padrão True
+                
                 if file_path.lower().endswith('.csv'):
-                    df.to_csv(file_path, index=False)
+                    df.to_csv(file_path, index=include_index, header=header)
                     logs.append(f"CSV salvo: {file_path}")
                 else:
-                    df.to_excel(file_path, sheet_name=sheet_name, index=False)
+                    # Para Excel, pode adicionar colunas extras como no SISREG.py
+                    df.to_excel(file_path, sheet_name=sheet_name, index=include_index, header=header)
+                    
+                    # Se especificado, adicionar colunas extras (como competência e nome_unidade)
+                    extra_column_name = inputs.get('extra_column_name', '')
+                    extra_column_value = inputs.get('extra_column_value', '')
+                    extra_column_position = inputs.get('extra_column_position', '1')  # 1 = primeira coluna
+                    
+                    if extra_column_name and extra_column_value:
+                        try:
+                            from openpyxl import load_workbook
+                            wb = load_workbook(file_path)
+                            ws = wb.active
+                            
+                            # Adicionar coluna extra
+                            col_pos = int(extra_column_position)
+                            for row in range(2, ws.max_row + 1):  # Começa da linha 2
+                                cell = ws.cell(row=row, column=col_pos)
+                                if cell.value:  # Se a célula tem conteúdo
+                                    cell.value = extra_column_value
+                            
+                            wb.save(file_path)
+                            logs.append(f"Coluna extra '{extra_column_name}' adicionada")
+                        except Exception as e:
+                            logs.append(f"Aviso: Não foi possível adicionar coluna extra: {str(e)}")
+                    
                     logs.append(f"Excel salvo: {file_path}, aba: {sheet_name}")
                 
                 logger.info(f"✅ Planilha salva: {file_path}")
@@ -108,6 +167,137 @@ class PandasExecutor:
             logger.error(f"❌ Erro na operação de planilha: {str(e)}")
             return {"success": False, "error": str(e), "logs": [f"Erro na planilha: {str(e)}"]}
     
+    async def execute_step_group_data(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa agrupamento de dados no DataFrame"""
+        try:
+            inputs = step.inputs
+            logs = []
+            
+            dataframe_variable = inputs.get('dataframe_variable', 'df')
+            group_by_column = inputs.get('group_by_column', '')
+            # Formato esperado: "col1:agg1,col2:agg2" ex: "id:size,valor:sum"
+            aggregations_str = inputs.get('aggregations', '')
+            output_variable = inputs.get('output_variable', 'df_grouped')
+            
+            if dataframe_variable not in self.dataframes:
+                return {"success": False, "error": f"DataFrame não encontrado: {dataframe_variable}"}
+            
+            df = self.dataframes[dataframe_variable]
+            
+            if group_by_column not in df.columns:
+                 return {"success": False, "error": f"Coluna de agrupamento não encontrada: {group_by_column}"}
+            
+            logger.info(f"🔢 Agrupando por: {group_by_column}")
+            logs.append(f"Agrupando DataFrame '{dataframe_variable}' por '{group_by_column}'")
+
+            # Processar agregações
+            agg_dict = {}
+            if aggregations_str:
+                for agg_item in aggregations_str.split(','):
+                    if ':' in agg_item:
+                        col, func = agg_item.split(':')
+                        col = col.strip()
+                        func = func.strip()
+                        
+                        # Tratamento especial para 'size' que não precisa de coluna específica ou usa a de agrupamento
+                        if func == 'size':
+                            agg_dict[group_by_column] = 'size'
+                        elif col in df.columns or col == group_by_column: # Permitir agregar a propria coluna de grupo
+                            # Suporte a funções lambda simples se necessário, mas por segurança manteremos strings padrão
+                            # Para listas únicas, usaremos uma string especial
+                            if func == 'unique_list':
+                                agg_dict[col] = lambda x: sorted(list(set(x)))
+                            elif func == 'unique_list_limited':
+                                # Limita a 4 itens como no script original
+                                agg_dict[col] = lambda x: sorted(list(set(x)))[:4]
+                            else:
+                                agg_dict[col] = func
+                        else:
+                             logs.append(f"Aviso: Coluna '{col}' para agregação não encontrada, ignorando.")
+            
+            if not agg_dict:
+                 agg_dict[group_by_column] = 'size' # Default
+
+            # Realizar agrupamento
+            # Se unique_list for usada, o pandas pode reclamar de lambda na serialização em alguns contextos,
+            # mas aqui estamos em memória.
+            grouped = df.groupby(group_by_column).agg(agg_dict)
+            
+            # Renomear colunas se necessário (opcional, pode ser feito em passo separado ou automático)
+            # Por padrão o pandas mantém o nome da coluna se agg for unica, ou cria MultiIndex
+            # Vamos resetar o index para transformar o grupo em coluna novamente
+            result_df = grouped.reset_index()
+            
+            self.dataframes[output_variable] = result_df
+            self.variables[output_variable] = result_df
+            
+            logs.append(f"Agrupamento concluído. Novo DataFrame: {output_variable}")
+            logs.append(f"Linhas resultantes: {len(result_df)}")
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro no agrupamento: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro no agrupamento: {str(e)}"]}
+
+    async def execute_step_transform_column(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Transforma uma coluna do DataFrame"""
+        try:
+            inputs = step.inputs
+            logs = []
+            
+            dataframe_variable = inputs.get('dataframe_variable', 'df')
+            column_name = inputs.get('column_name', '')
+            # Tipos: 'first_letter_upper', 'parse_list', 'custom_lambda'
+            transformation_type = inputs.get('transformation_type', 'first_letter_upper') 
+            new_column_name = inputs.get('new_column_name', '') # Se vazio, substitui a original
+            
+            if dataframe_variable not in self.dataframes:
+                return {"success": False, "error": f"DataFrame não encontrado: {dataframe_variable}"}
+            
+            df = self.dataframes[dataframe_variable]
+            target_col_name = new_column_name if new_column_name else column_name
+            
+            if column_name not in df.columns and transformation_type != 'create_empty':
+                return {"success": False, "error": f"Coluna alvo não encontrada: {column_name}"}
+
+            logger.info(f"✨ Transformando coluna: {column_name} -> {transformation_type}")
+            
+            if transformation_type == 'first_letter_upper':
+                # Pega a primeira letra e deixa maiúscula
+                df[target_col_name] = df[column_name].astype(str).str[0].str.upper()
+                logs.append(f"Transformação 'first_letter_upper' aplicada em '{column_name}'")
+                
+            elif transformation_type == 'parse_list':
+                # Converte string representativa de lista em lista real
+                import ast
+                def safe_eval(x):
+                    try:
+                        if isinstance(x, list): return x
+                        return ast.literal_eval(x)
+                    except:
+                        return []
+                df[target_col_name] = df[column_name].apply(safe_eval)
+                logs.append(f"Transformação 'parse_list' aplicada em '{column_name}'")
+                
+            elif transformation_type == 'limit_list':
+                # Limita lista a N itens
+                limit = int(inputs.get('limit', 4))
+                df[target_col_name] = df[column_name].apply(lambda x: x[:limit] if isinstance(x, list) else x)
+                logs.append(f"Transformação 'limit_list' (max {limit}) aplicada em '{column_name}'")
+                
+            elif transformation_type == 'to_string':
+                # Converte para string
+                df[target_col_name] = df[column_name].astype(str)
+                 
+            self.dataframes[dataframe_variable] = df # Atualiza ref (caso tenha mudado algo estrutural, em pandas geralmente é inplace ou ref direta)
+            
+            return {"success": True, "logs": logs}
+            
+        except Exception as e:
+            logger.error(f"❌ Erro na transformação: {str(e)}")
+            return {"success": False, "error": str(e), "logs": [f"Erro na transformação: {str(e)}"]}
+
     async def execute_step_variable(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa operações com variáveis"""
         try:
@@ -162,6 +352,39 @@ class PandasExecutor:
                 self.variables[variable_name] = new_value
                 logs.append(f"Texto concatenado: {variable_name} = {new_value}")
             
+            elif operation == 'get_list_item':
+                # Obter item de uma lista pelo índice
+                list_variable = inputs.get('list_variable', '')
+                index_variable = inputs.get('index_variable', '')
+                output_variable = inputs.get('output_variable', 'list_item')
+                
+                if list_variable not in self.variables:
+                     # Se variável não existe, tenta ver se é um literal (embora raro para lista)
+                     return {"success": False, "error": f"Variável de lista não encontrada: {list_variable}"}
+                
+                lista = self.variables[list_variable]
+                if not isinstance(lista, list):
+                     return {"success": False, "error": f"Variável '{list_variable}' não é uma lista. Tipo: {type(lista)}"}
+                
+                # Obter índice
+                if index_variable in self.variables:
+                    idx = int(self.variables[index_variable])
+                else:
+                    try:
+                        idx = int(index_variable)
+                    except:
+                         return {"success": False, "error": f"Índice inválido: {index_variable}"}
+                
+                if 0 <= idx < len(lista):
+                    self.variables[output_variable] = lista[idx]
+                    logs.append(f"Item {idx} obtido da lista: {lista[idx]}")
+                else:
+                    # Índice fora dos limites - retorna string vazia ou erro?
+                    # Para nosso caso de uso, melhor retornar vazio para indicar fim ou inexistencia sem crashar o loop fixo
+                    self.variables[output_variable] = ""
+                    logs.append(f"Aviso: Índice {idx} fora dos limites da lista (len={len(lista)}). Retornando vazio.")
+
+            
             logger.info(f"✅ Operação de variável concluída: {variable_name}")
             return {"success": True, "logs": logs}
             
@@ -208,18 +431,20 @@ class PandasExecutor:
                 start_value = int(inputs.get('start_value', 0))
                 end_value = int(inputs.get('end_value', 10))
                 step_value = int(inputs.get('step_value', 1))
+                row_variable = inputs.get('row_variable', 'i')
                 
                 loop_data = {
                     'type': 'range',
                     'start': start_value,
                     'end': end_value,
                     'step': step_value,
-                    'current': start_value,
+                    'current': start_value - step_value,  # Começar antes para que advance_loop funcione corretamente
+                    'row_variable': row_variable,
                     'max_iterations': max_iterations
                 }
                 
                 self.loop_stack.append(loop_data)
-                logs.append(f"Loop numérico iniciado: {start_value} até {end_value}")
+                logs.append(f"Loop numérico iniciado: {start_value} até {end_value} (variável: {row_variable})")
             
             logger.info(f"✅ Loop for configurado")
             return {"success": True, "logs": logs, "loop_started": True}
@@ -238,7 +463,9 @@ class PandasExecutor:
         if current_loop['type'] == 'dataframe_rows':
             return current_loop['current_index'] < current_loop['total_rows']
         elif current_loop['type'] == 'range':
-            return current_loop['current'] < current_loop['end']
+            # Verificar se ainda há iterações
+            next_value = current_loop['current'] + current_loop['step']
+            return next_value <= current_loop['end']
         
         return False
     
@@ -274,12 +501,16 @@ class PandasExecutor:
         elif current_loop['type'] == 'range':
             # Avançar contador
             current_value = current_loop['current']
-            self.variables['i'] = current_value
+            row_variable = current_loop.get('row_variable', 'i')
+            self.variables[row_variable] = current_value
+            self.variables['i'] = current_value  # Manter compatibilidade
             
-            current_loop['current'] += current_loop['step']
             logs.append(f"Iteração: {current_value}")
             
-            if current_loop['current'] >= current_loop['end']:
+            # Avançar para próxima iteração ANTES de verificar se terminou
+            current_loop['current'] += current_loop['step']
+            
+            if current_loop['current'] > current_loop['end']:
                 # Loop terminado
                 self.loop_stack.pop()
                 logs.append("Loop numérico concluído")
@@ -387,8 +618,14 @@ class PandasExecutor:
                 custom_condition = inputs.get('custom_condition', 'True')
                 try:
                     # Criar contexto seguro com as variáveis
-                    safe_globals = {"__builtins__": {}}
+                    safe_builtins = {
+                        'int': int, 'float': float, 'str': str, 'bool': bool,
+                        'list': list, 'dict': dict, 'len': len, 'range': range,
+                        'abs': abs, 'round': round, 'min': min, 'max': max, 'sum': sum
+                    }
+                    safe_globals = {"__builtins__": safe_builtins}
                     safe_locals = self.variables.copy()
+                    safe_locals['variables'] = self.variables  # Permitir acesso explícito ao dict variables
                     
                     condition_result = bool(eval(custom_condition, safe_globals, safe_locals))
                     logs.append(f"Condição personalizada: {custom_condition} = {condition_result}")
@@ -499,8 +736,14 @@ class PandasExecutor:
             
             elif condition_type == 'custom':
                 custom_condition = condition_inputs.get('custom_condition', 'False')
-                safe_globals = {"__builtins__": {}}
+                safe_builtins = {
+                    'int': int, 'float': float, 'str': str, 'bool': bool,
+                    'list': list, 'dict': dict, 'len': len, 'range': range,
+                    'abs': abs, 'round': round, 'min': min, 'max': max, 'sum': sum
+                }
+                safe_globals = {"__builtins__": safe_builtins}
                 safe_locals = self.variables.copy()
+                safe_locals['variables'] = self.variables  # Permitir acesso explícito ao dict variables
                 condition_result = bool(eval(custom_condition, safe_globals, safe_locals))
             
             # Incrementar contador de iterações

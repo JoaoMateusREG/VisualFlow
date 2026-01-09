@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  visualflow:
+    build: .
+    container_name: visualflow
+    ports:
+      - "8164:8000"
+    environment:
+      - DATA_DIR=/app/data
+    volumes:
+      # Mapeia a pasta local 'visualflow_data' para dentro do container
+      # Isso garante que arquivos baixados/criados persistam
+      - ./visualflow_data:/app/data
+    # Aumentar shm-size é recomendado para Chrome/Selenium em Docker para evitar crashes
+    shm_size: '2gb'

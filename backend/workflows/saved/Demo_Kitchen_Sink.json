@@ -1,0 +1,391 @@
+{
+  "metadata": {
+    "id": "c0feff92-697b-4184-8877-4041cfd2d8de",
+    "name": "Demo 3: Kitchen Sink (Lógica Avançada)",
+    "description": "Demonstra Loops, Condições, Agendamento e Lógica.",
+    "created_at": "2026-01-09T00:02:55.823184",
+    "updated_at": "2026-01-09T00:02:55.823185",
+    "version": "1.0.0",
+    "tags": [
+      "exemplo",
+      "demo"
+    ],
+    "author": "system",
+    "is_template": false
+  },
+  "flow_data": {
+    "metadata": {
+      "name": "Demo 3: Kitchen Sink (Lógica Avançada)",
+      "createdAt": "2026-01-09T00:02:55.823174",
+      "version": "1.0.0",
+      "totalSteps": 9
+    },
+    "validation": {
+      "isValid": true,
+      "errors": []
+    },
+    "executionOrder": [
+      {
+        "id": "7fbec3f2-3168-4d4e-a1d3-a8f96e0755a0",
+        "type": "variable",
+        "label": "1. Configurar Variáveis",
+        "inputs": {
+          "operation": "set",
+          "variable_name": "max_loops",
+          "variable_value": "3"
+        },
+        "position": {
+          "x": 100,
+          "y": 100
+        }
+      },
+      {
+        "id": "eaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab",
+        "type": "schedule",
+        "label": "2. Agendamento (Demo)",
+        "inputs": {
+          "schedule_type": "daily",
+          "time": "08:00"
+        },
+        "position": {
+          "x": 100,
+          "y": 250
+        }
+      },
+      {
+        "id": "970055f4-96b8-42b5-a736-832b78184793",
+        "type": "openSite",
+        "label": "2.5 Abrir Site com Tabela",
+        "inputs": {
+          "url": "https://the-internet.herokuapp.com/tables",
+          "wait_time": "3"
+        },
+        "position": {
+          "x": 100,
+          "y": 325
+        }
+      },
+      {
+        "id": "96c179c9-92a8-4b63-8c01-096afa32a313",
+        "type": "loopFor",
+        "label": "3. Loop Range",
+        "inputs": {
+          "loop_type": "range",
+          "start_value": "1",
+          "end_value": "4"
+        },
+        "position": {
+          "x": 100,
+          "y": 400
+        }
+      },
+      {
+        "id": "db740a19-b002-4b1b-9916-2b020e8c11b3",
+        "type": "condition",
+        "label": "4. É Par?",
+        "inputs": {
+          "condition_type": "custom",
+          "custom_condition": "int(variables.get('i', 0)) % 2 == 0"
+        },
+        "position": {
+          "x": 350,
+          "y": 400
+        }
+      },
+      {
+        "id": "35958576-8c6d-4e53-b9f1-43c372984520",
+        "type": "spreadsheet",
+        "label": "5. Log (Par)",
+        "inputs": {
+          "operation": "create",
+          "variable_name": "log_par",
+          "columns": "Msg"
+        },
+        "position": {
+          "x": 600,
+          "y": 300
+        }
+      },
+      {
+        "id": "fe082c5f-e1b1-43ff-bc23-29b25e470d7d",
+        "type": "sleep",
+        "label": "6. Espera (Ímpar)",
+        "inputs": {
+          "duration": "1"
+        },
+        "position": {
+          "x": 600,
+          "y": 500
+        }
+      },
+      {
+        "id": "175ab022-d9e1-42e9-b6ab-a24d148a2bf4",
+        "type": "captureTable",
+        "label": "7. Capturar Tabela (Exemplo)",
+        "inputs": {
+          "selector_value": "//table[@id='table1']",
+          "variable_name": "tabela_site"
+        },
+        "position": {
+          "x": 100,
+          "y": 600
+        }
+      },
+      {
+        "id": "0bca5a6b-43d5-4f40-8611-13c6515f06e5",
+        "type": "loopWhile",
+        "label": "8. Loop While",
+        "inputs": {
+          "condition_type": "variable_comparison",
+          "variable_name": "contador",
+          "comparison_operator": "<",
+          "comparison_value": "5"
+        },
+        "position": {
+          "x": 100,
+          "y": 750
+        }
+      }
+    ],
+    "rawData": {
+      "nodes": [
+        {
+          "id": "7fbec3f2-3168-4d4e-a1d3-a8f96e0755a0",
+          "type": "variable",
+          "data": {
+            "label": "1. Configurar Variáveis",
+            "type": "variable",
+            "inputs": {
+              "operation": "set",
+              "variable_name": "max_loops",
+              "variable_value": "3"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 100
+          }
+        },
+        {
+          "id": "eaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab",
+          "type": "schedule",
+          "data": {
+            "label": "2. Agendamento (Demo)",
+            "type": "schedule",
+            "inputs": {
+              "schedule_type": "daily",
+              "time": "08:00"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 250
+          }
+        },
+        {
+          "id": "970055f4-96b8-42b5-a736-832b78184793",
+          "type": "openSite",
+          "data": {
+            "label": "2.5 Abrir Site com Tabela",
+            "type": "openSite",
+            "inputs": {
+              "url": "https://the-internet.herokuapp.com/tables",
+              "wait_time": "3"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 325
+          }
+        },
+        {
+          "id": "96c179c9-92a8-4b63-8c01-096afa32a313",
+          "type": "loopFor",
+          "data": {
+            "label": "3. Loop Range",
+            "type": "loopFor",
+            "inputs": {
+              "loop_type": "range",
+              "start_value": "1",
+              "end_value": "4"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 400
+          }
+        },
+        {
+          "id": "db740a19-b002-4b1b-9916-2b020e8c11b3",
+          "type": "condition",
+          "data": {
+            "label": "4. É Par?",
+            "type": "condition",
+            "inputs": {
+              "condition_type": "custom",
+              "custom_condition": "int(variables.get('i', 0)) % 2 == 0"
+            }
+          },
+          "position": {
+            "x": 350,
+            "y": 400
+          }
+        },
+        {
+          "id": "35958576-8c6d-4e53-b9f1-43c372984520",
+          "type": "spreadsheet",
+          "data": {
+            "label": "5. Log (Par)",
+            "type": "spreadsheet",
+            "inputs": {
+              "operation": "create",
+              "variable_name": "log_par",
+              "columns": "Msg"
+            }
+          },
+          "position": {
+            "x": 600,
+            "y": 300
+          }
+        },
+        {
+          "id": "fe082c5f-e1b1-43ff-bc23-29b25e470d7d",
+          "type": "sleep",
+          "data": {
+            "label": "6. Espera (Ímpar)",
+            "type": "sleep",
+            "inputs": {
+              "duration": "1"
+            }
+          },
+          "position": {
+            "x": 600,
+            "y": 500
+          }
+        },
+        {
+          "id": "175ab022-d9e1-42e9-b6ab-a24d148a2bf4",
+          "type": "captureTable",
+          "data": {
+            "label": "7. Capturar Tabela (Exemplo)",
+            "type": "captureTable",
+            "inputs": {
+              "selector_value": "//table[@id='table1']",
+              "variable_name": "tabela_site"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 600
+          }
+        },
+        {
+          "id": "0bca5a6b-43d5-4f40-8611-13c6515f06e5",
+          "type": "loopWhile",
+          "data": {
+            "label": "8. Loop While",
+            "type": "loopWhile",
+            "inputs": {
+              "condition_type": "variable_comparison",
+              "variable_name": "contador",
+              "comparison_operator": "<",
+              "comparison_value": "5"
+            }
+          },
+          "position": {
+            "x": 100,
+            "y": 750
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e7fbec3f2-3168-4d4e-a1d3-a8f96e0755a0-eaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab",
+          "source": "7fbec3f2-3168-4d4e-a1d3-a8f96e0755a0",
+          "target": "eaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "eeaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab-970055f4-96b8-42b5-a736-832b78184793",
+          "source": "eaf7ed07-ef1b-4e12-ae82-6d63dbfde6ab",
+          "target": "970055f4-96b8-42b5-a736-832b78184793",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e970055f4-96b8-42b5-a736-832b78184793-96c179c9-92a8-4b63-8c01-096afa32a313",
+          "source": "970055f4-96b8-42b5-a736-832b78184793",
+          "target": "96c179c9-92a8-4b63-8c01-096afa32a313",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e96c179c9-92a8-4b63-8c01-096afa32a313-db740a19-b002-4b1b-9916-2b020e8c11b3",
+          "source": "96c179c9-92a8-4b63-8c01-096afa32a313",
+          "target": "db740a19-b002-4b1b-9916-2b020e8c11b3",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "edb740a19-b002-4b1b-9916-2b020e8c11b3-35958576-8c6d-4e53-b9f1-43c372984520",
+          "source": "db740a19-b002-4b1b-9916-2b020e8c11b3",
+          "target": "35958576-8c6d-4e53-b9f1-43c372984520",
+          "sourceHandle": "true",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "edb740a19-b002-4b1b-9916-2b020e8c11b3-fe082c5f-e1b1-43ff-bc23-29b25e470d7d",
+          "source": "db740a19-b002-4b1b-9916-2b020e8c11b3",
+          "target": "fe082c5f-e1b1-43ff-bc23-29b25e470d7d",
+          "sourceHandle": "false",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e96c179c9-92a8-4b63-8c01-096afa32a313-175ab022-d9e1-42e9-b6ab-a24d148a2bf4",
+          "source": "96c179c9-92a8-4b63-8c01-096afa32a313",
+          "target": "175ab022-d9e1-42e9-b6ab-a24d148a2bf4",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        },
+        {
+          "id": "e175ab022-d9e1-42e9-b6ab-a24d148a2bf4-0bca5a6b-43d5-4f40-8611-13c6515f06e5",
+          "source": "175ab022-d9e1-42e9-b6ab-a24d148a2bf4",
+          "target": "0bca5a6b-43d5-4f40-8611-13c6515f06e5",
+          "sourceHandle": "output",
+          "animated": true,
+          "style": {
+            "stroke": "#fff"
+          }
+        }
+      ],
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+      }
+    }
+  },
+  "file_path": "workflows/saved/Demo_Kitchen_Sink.json"
+}

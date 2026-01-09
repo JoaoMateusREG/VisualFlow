@@ -11,6 +11,12 @@ import {
   Hash, 
   GitBranch,
   Calendar,
+  Table,
+  Code,
+  Search,
+  Columns,
+  Layers,
+  Terminal,
   LucideIcon 
 } from 'lucide-react';
 import { NodeType } from '../types';
@@ -27,7 +33,13 @@ const iconMap: Record<string, LucideIcon> = {
   Repeat,
   Hash, // Usar Hash em vez de Variable
   GitBranch,
-  Calendar
+  Calendar,
+  Table,
+  Code,
+  Search,
+  Columns,
+  Layers,
+  Terminal
 };
 
 const Sidebar: React.FC = () => {
@@ -38,8 +50,10 @@ const Sidebar: React.FC = () => {
 
   const nodeTypes: NodeType[] = [
     NodeType.LOGIN,
+    NodeType.OPEN_SITE,
     NodeType.CLICK_BUTTON,
     NodeType.EXTRACT_TABLE,
+    NodeType.CAPTURE_TABLE,
     NodeType.WAIT,
     NodeType.SLEEP,
     NodeType.SPREADSHEET,
@@ -47,7 +61,12 @@ const Sidebar: React.FC = () => {
     NodeType.LOOP_WHILE,
     NodeType.VARIABLE,
     NodeType.CONDITION,
-    NodeType.SCHEDULE
+    NodeType.SCHEDULE,
+    NodeType.EXECUTE_SCRIPT,
+    NodeType.EXTRACT_TEXT,
+    NodeType.TRANSFORM_COLUMN,
+    NodeType.GROUP_DATA,
+    NodeType.EXECUTE_PYTHON
   ];
 
   return (
