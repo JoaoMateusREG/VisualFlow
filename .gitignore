@@ -20,6 +20,23 @@ yarn-debug.log*
 yarn-error.log*
 bun.lockb
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+backend/venv/
+ENV/
+env/
+.venv/
+*.egg-info/
+*.egg
+
+# Data folder (created at runtime)
+visualflow_data/
+
 # Runtime data
 pids
 *.pid

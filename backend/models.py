@@ -17,6 +17,7 @@ class NodeType(str, Enum):
     VARIABLE = "variable"
     CONDITION = "condition"
     SCHEDULE = "schedule"
+    CLOSE_BROWSER = "closeBrowser"
 
     EXECUTE_SCRIPT = "executeScript"
     EXTRACT_TEXT = "extractText"

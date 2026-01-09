@@ -1,17 +1,27 @@
 # ==========================================
-# Stage 1: Build Frontend (Node.js)
+# Stage 1: Build Frontend (Bun)
 # ==========================================
-FROM node:18-alpine as frontend_build
+FROM oven/bun:1 as frontend_build
 
 WORKDIR /app_frontend
 
 # Install dependencies (caching layer)
-COPY package*.json ./
-RUN npm install
+COPY package.json bun.lock* ./
+RUN bun install
 
-# Build React App
-COPY . .
-RUN npm run build
+# Copy source code
+COPY src ./src
+COPY public ./public
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY tsconfig.node.json ./
+COPY tailwind.config.cjs ./
+COPY postcss.config.cjs ./
+
+# Build React App with production API URL (empty because endpoints already have /api)
+ENV VITE_API_URL=
+RUN bun run build
 # The output will be in /app_frontend/dist
 
 # ==========================================
@@ -27,11 +37,13 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     unzip \
     xvfb \
-    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' \
+    ca-certificates \
+    && wget -q -O /tmp/google-chrome-key.pub https://dl-ssl.google.com/linux/linux_signing_key.pub \
+    && gpg --dearmor -o /usr/share/keyrings/google-chrome-keyring.gpg /tmp/google-chrome-key.pub \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome-keyring.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
     && apt-get install -y google-chrome-stable \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /tmp/google-chrome-key.pub
 
 # Install Python dependencies
 COPY backend/requirements.txt .
@@ -46,6 +58,9 @@ COPY --from=frontend_build /app_frontend/dist /app/dist
 
 # Copy Backend Code
 COPY backend/ /app/backend/
+
+# Copy example workflows
+COPY backend/workflows/saved/ /app/backend/workflows/saved/
 
 # Set Environment Variables
 ENV FRONTEND_DIST_DIR=/app/dist

@@ -18,7 +18,8 @@ export enum NodeType {
   EXTRACT_TEXT = 'extractText',
   TRANSFORM_COLUMN = 'transformColumn',
   GROUP_DATA = 'groupData',
-  EXECUTE_PYTHON = 'executePython'
+  EXECUTE_PYTHON = 'executePython',
+  CLOSE_BROWSER = 'closeBrowser'
 }
 
 export interface SelectOption {

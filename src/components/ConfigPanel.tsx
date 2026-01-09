@@ -260,12 +260,25 @@ ${inputs.variable_name ? `variables["${inputs.variable_name}"] = result\nprint(f
 element = WebDriverWait(driver, ${inputs.wait_timeout || 10}).until(
     EC.presence_of_element_located((By.${inputs.selector_type?.toUpperCase() || 'XPATH'}, "${inputs.selector_value || '//div'}"))
 )
-text = element.text
-match = re.search(r"${inputs.regex_pattern || '(.*)'}", text)
-if match:
-    value = match.group(1) if match.groups() else match.group(0)
-    variables["${inputs.variable_name || 'texto_extraido'}"] = value
-    print(f"Texto extraído: {value}")`;
+text_content = element.text
+extracted_value = text_content
+
+# Regex no elemento
+if "${inputs.regex_pattern}":
+    match = re.search(r"${inputs.regex_pattern}", text_content)
+    if match:
+        extracted_value = match.group(1) if match.groups() else match.group(0)
+
+# Fallback no Body
+if ${inputs.fallback_to_body === 'true' ? 'True' : 'False'} and not extracted_value:
+    body_text = driver.find_element(By.TAG_NAME, 'body').text
+    fallback_pattern = r"${inputs.fallback_regex_pattern || inputs.regex_pattern}"
+    match = re.search(fallback_pattern, body_text)
+    if match:
+        extracted_value = match.group(1) if match.groups() else match.group(0)
+
+variables["${inputs.variable_name || 'texto_extraido'}"] = extracted_value
+print(f"Texto extraído: {extracted_value}")`;
 
       case 'transformColumn':
         return `# Transformar Coluna
@@ -305,6 +318,12 @@ ${inputs.code || '# Seu código aqui'}
 """
 exec(code)`;
 
+      case 'closeBrowser':
+        return `# Fechar Navegador
+if driver:
+    driver.quit()
+    print("Navegador encerrado")`;
+
       default:
         return '# Código será gerado baseado na configuração';
     }
@@ -338,7 +357,7 @@ exec(code)`;
       </div>
 
       {/* Configurações */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         <div className="space-y-4 pb-20"> {/* pb-20 gives space for last items tooltip */}
           {config.inputs.map((input) => (
             <div key={input.name} className="space-y-2 relative hover:z-50">

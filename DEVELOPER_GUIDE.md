@@ -1,8 +1,8 @@
-# VisualFlow Developer Guide
+# Guia do Desenvolvedor - VisualFlow
 
-## Architecture Overview
+## Visão Geral da Arquitetura
 
-VisualFlow follows a **client-server architecture** with a React frontend and FastAPI backend.
+O VisualFlow segue uma **arquitetura cliente-servidor** com frontend React e backend FastAPI.
 
 ```
 ┌────────────────┐     HTTP/WS      ┌─────────────────────┐
@@ -14,90 +14,90 @@ VisualFlow follows a **client-server architecture** with a React frontend and Fa
                         ▼                     ▼                     ▼
                ┌───────────────┐     ┌───────────────┐     ┌───────────────┐
                │ SeleniumExec  │     │ PandasExec    │     │ WorkflowStore │
-               │ (web actions) │     │ (data ops)    │     │ (persistence) │
+               │ (ações web)   │     │ (ops dados)   │     │ (persistência)│
                └───────────────┘     └───────────────┘     └───────────────┘
 ```
 
-## Project Structure
+## Estrutura do Projeto
 
 ```
 VisualFlow/
-├── src/                    # React Frontend
-│   ├── App.tsx             # Main application
-│   ├── components/         # UI components
-│   │   ├── Sidebar.tsx     # Block palette
-│   │   ├── ConfigPanel.tsx # Property editor
-│   │   ├── CustomNode.tsx  # Flow node renderer
+├── src/                    # Frontend React
+│   ├── App.tsx             # Aplicação principal
+│   ├── components/         # Componentes UI
+│   │   ├── Sidebar.tsx     # Paleta de blocos
+│   │   ├── ConfigPanel.tsx # Editor de propriedades
+│   │   ├── CustomNode.tsx  # Renderizador de nós
 │   │   └── ...
-│   ├── services/           # API clients
-│   └── types/              # TypeScript definitions
+│   ├── services/           # Clientes API
+│   └── types/              # Definições TypeScript
 │
-├── backend/                # Python Backend
-│   ├── main.py             # FastAPI server & routes
-│   ├── models.py           # Pydantic data models
-│   ├── selenium_executor.py # Web automation engine
-│   ├── pandas_executor.py  # Data processing engine
-│   ├── workflow_storage.py # Save/load workflows
-│   └── tools/              # Utility scripts (dev only)
+├── backend/                # Backend Python
+│   ├── main.py             # Servidor FastAPI e rotas
+│   ├── models.py           # Modelos de dados Pydantic
+│   ├── selenium_executor.py # Motor de automação web
+│   ├── pandas_executor.py  # Motor de processamento de dados
+│   ├── workflow_storage.py # Salvar/carregar workflows
+│   └── tools/              # Scripts utilitários (dev apenas)
 │
-├── Dockerfile              # Unified production image
-├── docker-compose.yml      # Docker orchestration
-└── visualflow_data/        # Persistent data volume
+├── Dockerfile              # Imagem de produção unificada
+├── docker-compose.yml      # Orquestração Docker
+└── visualflow_data/        # Volume de dados persistente
 ```
 
-## Adding a New Block Type
+## Adicionando um Novo Tipo de Bloco
 
-### 1. Define the NodeType (Backend)
+### 1. Definir o NodeType (Backend)
 
-Edit `backend/models.py`:
+Edite `backend/models.py`:
 ```python
 class NodeType(str, Enum):
-    # ... existing types ...
-    MY_NEW_BLOCK = "myNewBlock"
+    # ... tipos existentes ...
+    MEU_NOVO_BLOCO = "meuNovoBloco"
 ```
 
-### 2. Implement the Executor Method (Backend)
+### 2. Implementar o Método Executor (Backend)
 
-In `selenium_executor.py` or `pandas_executor.py`:
+Em `selenium_executor.py` ou `pandas_executor.py`:
 ```python
-async def execute_step_my_new_block(self, step: FlowExecutionStep) -> Dict[str, Any]:
+async def execute_step_meu_novo_bloco(self, step: FlowExecutionStep) -> Dict[str, Any]:
     inputs = step.inputs
     logs = []
-    # Your logic here
+    # Sua lógica aqui
     return {"success": True, "logs": logs}
 ```
 
-Register in `_execute_step()`:
+Registre em `_execute_step()`:
 ```python
-elif step.type == NodeType.MY_NEW_BLOCK:
-    return await self.execute_step_my_new_block(step)
+elif step.type == NodeType.MEU_NOVO_BLOCO:
+    return await self.execute_step_meu_novo_bloco(step)
 ```
 
-### 3. Add UI Configuration (Frontend)
+### 3. Adicionar Configuração UI (Frontend)
 
-Edit `src/types/nodeTypes.ts`:
+Edite `src/types/nodeTypes.ts`:
 ```typescript
-[NodeType.MY_NEW_BLOCK]: {
-  label: 'My New Block',
-  icon: 'SomeIcon',
+[NodeType.MEU_NOVO_BLOCO]: {
+  label: 'Meu Novo Bloco',
+  icon: 'AlgumIcone',
   color: '#hexcolor',
-  description: 'What this block does',
+  description: 'O que este bloco faz',
   inputs: [
-    { name: 'param1', label: 'Parameter 1', type: 'text', required: true }
+    { name: 'param1', label: 'Parâmetro 1', type: 'text', required: true }
   ]
 }
 ```
 
-### 4. Register in App.tsx
+### 4. Registrar em App.tsx
 
 ```typescript
 const nodeTypes = {
-  // ... existing ...
-  [NodeType.MY_NEW_BLOCK]: CustomNode,
+  // ... existentes ...
+  [NodeType.MEU_NOVO_BLOCO]: CustomNode,
 };
 ```
 
-## Running Locally
+## Executando Localmente
 
 ```bash
 # Backend
@@ -107,31 +107,31 @@ source venv/bin/activate
 pip install -r requirements.txt
 python3 start.py
 
-# Frontend (separate terminal)
-bun install  # or npm install
+# Frontend (terminal separado)
+bun install  # ou npm install
 bun run dev
 ```
 
-## Docker Deployment
+## Deploy com Docker
 
 ```bash
 docker-compose up --build
-# Access at http://localhost:8164
+# Acesse em http://localhost:8164
 ```
 
-## Data Directory
+## Diretório de Dados
 
-All files (downloaded, created, saved) are stored in:
-- **Docker**: `/app/data` (mapped to `./visualflow_data`)
-- **Local dev**: `./visualflow_data` (project root)
+Todos os arquivos (baixados, criados, salvos) são armazenados em:
+- **Docker**: `/app/data` (mapeado para `./visualflow_data`)
+- **Dev local**: `./visualflow_data` (raiz do projeto)
 
-## API Endpoints
+## Endpoints da API
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/execute` | POST | Execute workflow |
-| `/api/validate-flow` | POST | Validate workflow |
-| `/api/workflows` | GET | List saved workflows |
-| `/api/workflows` | POST | Save new workflow |
-| `/api/workflows/{id}` | GET | Load workflow |
-| `/api/workflows/{id}` | DELETE | Delete workflow |
+| Endpoint | Método | Descrição |
+|----------|--------|-----------|
+| `/api/execute` | POST | Executar workflow |
+| `/api/validate-flow` | POST | Validar workflow |
+| `/api/workflows` | GET | Listar workflows salvos |
+| `/api/workflows` | POST | Salvar novo workflow |
+| `/api/workflows/{id}` | GET | Carregar workflow |
+| `/api/workflows/{id}` | DELETE | Deletar workflow |

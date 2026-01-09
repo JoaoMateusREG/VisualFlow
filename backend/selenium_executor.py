@@ -167,9 +167,18 @@ class SeleniumExecutor:
         if self.driver:
             try:
                 self.driver.quit()
+                self.driver = None # Marcar como fechado
                 logger.info("✅ Driver fechado com sucesso")
             except Exception as e:
                 logger.error(f"⚠️ Erro ao fechar driver: {str(e)}")
+
+    async def execute_step_close_browser(self, step: FlowExecutionStep) -> Dict[str, Any]:
+        """Executa passo de fechar navegador"""
+        try:
+            self._cleanup_driver()
+            return {"success": True, "logs": ["Navegador fechado com sucesso"]}
+        except Exception as e:
+            return {"success": False, "error": str(e), "logs": [f"Erro ao fechar navegador: {str(e)}"]}
     
     async def execute_step_login(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa passo de navegação/login"""
@@ -710,6 +719,7 @@ class SeleniumExecutor:
             
             # Se true, procura em todo outerHTML/text do body se falhar o seletor
             fallback_to_body = inputs.get('fallback_to_body', 'false') == 'true' 
+            fallback_regex_pattern = inputs.get('fallback_regex_pattern', '')
             
             extracted_value = None
             
@@ -747,7 +757,8 @@ class SeleniumExecutor:
                 try:
                     body_text = self.driver.find_element(By.TAG_NAME, 'body').text
                     import re
-                    match = re.search(regex_pattern, body_text, re.IGNORECASE)
+                    pattern_to_use = fallback_regex_pattern if fallback_regex_pattern else regex_pattern
+                    match = re.search(pattern_to_use, body_text, re.IGNORECASE)
                     if match:
                          if match.groups():
                             extracted_value = match.group(1)
@@ -1037,8 +1048,11 @@ class SeleniumExecutor:
                             logger.info(f"✅ Loop concluído após {iteration} iterações")
                             break
                     
-                    # Avançar para próximo passo após o loop
-                    i += 1
+                    # Avançar para próximo passo após o loop (pular corpo do loop)
+                    if loop_body_indices:
+                        i = max(loop_body_indices) + 1
+                    else:
+                        i += 1
                     continue
                 
                 # Executar passo normal
@@ -1067,7 +1081,9 @@ class SeleniumExecutor:
             logger.info("🎉 Fluxo executado com sucesso!")
             
         finally:
-            self._cleanup_driver()
+            # Não fechar automaticamente - apenas se houver bloco "Fechar Navegador"
+            # self._cleanup_driver()
+            pass
     
     async def _execute_step(self, step: FlowExecutionStep) -> Dict[str, Any]:
         """Executa um passo individual"""
@@ -1105,6 +1121,8 @@ class SeleniumExecutor:
             return await self.pandas_executor.execute_step_group_data(step)
         elif step.type == NodeType.EXECUTE_PYTHON:
             return await self.execute_step_python(step)
+        elif step.type == NodeType.CLOSE_BROWSER:
+            return await self.execute_step_close_browser(step)
         else:
             return {"success": False, "error": f"Tipo de passo não suportado: {step.type}"}
     
@@ -1206,6 +1224,9 @@ class SeleniumExecutor:
                             errors.append(f"Passo {step_num}: Horário inválido (use HH:MM)")
                     except ValueError:
                         errors.append(f"Passo {step_num}: Formato de horário inválido (use HH:MM)")
+            
+            elif step.type == NodeType.CLOSE_BROWSER:
+                pass # Nenhuma validação específica necessária
         
         return {
             "valid": len(errors) == 0,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Save, Download, Upload, Zap, Server, Eye, FolderOpen } from 'lucide-react';
+import { Play, Save, Download, Upload, Zap, Server, Eye, FolderOpen, Code } from 'lucide-react';
 
 interface HeaderProps {
   onExecuteFlow: () => void;
@@ -12,6 +12,7 @@ interface HeaderProps {
   isExecuting?: boolean;
   showExecutionPanel?: boolean;
   workflowName?: string;
+  onViewCode: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -24,7 +25,8 @@ const Header: React.FC<HeaderProps> = ({
   onOpenWorkflowManager,
   isExecuting = false,
   showExecutionPanel = false,
-  workflowName
+  workflowName,
+  onViewCode
 }) => {
   return (
     <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
@@ -109,6 +111,14 @@ const Header: React.FC<HeaderProps> = ({
           >
             <Eye size={16} />
             <span className="text-sm">Logs</span>
+          </button>
+          
+          <button
+            onClick={onViewCode}
+            className="flex items-center space-x-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+          >
+            <Code size={16} />
+            <span className="text-sm">Ver Código</span>
           </button>
         </div>
       </div>

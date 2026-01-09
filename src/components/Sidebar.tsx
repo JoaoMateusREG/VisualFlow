@@ -17,6 +17,7 @@ import {
   Columns,
   Layers,
   Terminal,
+  XCircle,
   LucideIcon 
 } from 'lucide-react';
 import { NodeType } from '../types';
@@ -39,7 +40,8 @@ const iconMap: Record<string, LucideIcon> = {
   Search,
   Columns,
   Layers,
-  Terminal
+  Terminal,
+  XCircle
 };
 
 const Sidebar: React.FC = () => {
@@ -66,13 +68,17 @@ const Sidebar: React.FC = () => {
     NodeType.EXTRACT_TEXT,
     NodeType.TRANSFORM_COLUMN,
     NodeType.GROUP_DATA,
-    NodeType.EXECUTE_PYTHON
+    NodeType.EXECUTE_PYTHON,
+    NodeType.CLOSE_BROWSER
   ];
 
   return (
-    <div className="w-64 bg-gray-800 border-r border-gray-700 p-4">
-      <h2 className="text-lg font-semibold mb-4 text-white">Blocos de Automação</h2>
-      <div className="space-y-3">
+    <div className="w-64 bg-gray-800 border-r border-gray-700 flex flex-col h-full">
+      <div className="p-4 pb-2 shrink-0">
+        <h2 className="text-lg font-semibold text-white">Blocos de Automação</h2>
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-4 pt-2 space-y-3 custom-scrollbar">
         {nodeTypes.map((nodeType) => {
           const config = getNodeConfig(nodeType);
           if (!config) return null;
@@ -98,7 +104,7 @@ const Sidebar: React.FC = () => {
         })}
       </div>
       
-      <div className="mt-8 p-3 bg-gray-700 rounded-lg">
+      <div className="p-3 bg-gray-700 mx-4 mb-4 rounded-lg shrink-0">
         <h3 className="text-sm font-medium text-white mb-2">Como usar:</h3>
         <ul className="text-xs text-gray-300 space-y-1">
           <li>• Arraste blocos para o canvas</li>

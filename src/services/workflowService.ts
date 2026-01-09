@@ -1,6 +1,7 @@
 import { FlowData } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000';
+// Use environment variable or fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface WorkflowMetadata {
   id: string;
