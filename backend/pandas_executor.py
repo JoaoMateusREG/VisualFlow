@@ -29,27 +29,34 @@ class PandasExecutor:
     
     def _get_safe_path(self, file_path: str) -> str:
         """
-        Garante que o caminho do arquivo esteja dentro do diretório de dados configurado.
-        Se o caminho for relativo, combina com DATA_DIR.
-        Se for absoluto, verifica se está dentro de DATA_DIR.
+        Garante que o caminho do arquivo esteja dentro de workflows/sheets.
+        Permite subpastas definidas pelo usuário.
         """
+        # Base: DATA_DIR/workflows/sheets
         data_dir = os.getenv('DATA_DIR', '/app/data')
-        os.makedirs(data_dir, exist_ok=True)
+        sheets_dir = os.path.join(data_dir, 'workflows', 'sheets')
+        os.makedirs(sheets_dir, exist_ok=True)
         
-        # Limpar caminho input
+        # Normalizar caminho de entrada
+        # Remove caracteres perigosos e normaliza barras
         clean_path = file_path.strip().replace('\\', '/')
         
-        # Se for apenas nome de arquivo ou relativo, juntar com data_dir
-        if not os.path.isabs(clean_path):
-            safe_path = os.path.join(data_dir, clean_path)
-        else:
-            # Se for absoluto, verificar se está dentro do data_dir (segurança básica)
-            # Para simplificar neste ambiente docker, vamos forçar o uso do data_dir
-            # se o usuário tentar salvar em /tmp ou coisa parecida, vamos redirecionar
-            # ou confiar se for explicitamente desejado.
-            # Mas a proposta principal é persistência: então forçar data_dir para arquivos "do usuário"
-            base_name = os.path.basename(clean_path)
-            safe_path = os.path.join(data_dir, base_name)
+        # Se o usuário passar um caminho absoluto, pegamos apenas o relativo à "sheets" se possível,
+        # ou forçamos ser relativo removendo o drive/root.
+        # Simplificação: tratamos tudo como relativo à sheets_dir.
+        # Removemos referências a diretórios pais (..)
+        clean_path = clean_path.replace('..', '')
+        while clean_path.startswith('/'):
+            clean_path = clean_path[1:]
+        
+        # Se o caminho for vazio após limpeza (ex: só tinha barra), usa padrão
+        if not clean_path:
+            clean_path = "dados.xlsx"
+
+        safe_path = os.path.join(sheets_dir, clean_path)
+        
+        # Garantir que o diretório pai do arquivo exista
+        os.makedirs(os.path.dirname(safe_path), exist_ok=True)
             
         return safe_path
 

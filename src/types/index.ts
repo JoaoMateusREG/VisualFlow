@@ -1,25 +1,29 @@
 import { Node, Edge } from 'reactflow';
 
+/**
+ * Tipos de nós suportados na aplicação VisualFlow
+ * Cada tipo corresponde a uma ação ou bloco lógico específico
+ */
 export enum NodeType {
-  LOGIN = 'login',
-  OPEN_SITE = 'openSite',
-  CLICK_BUTTON = 'clickButton',
-  EXTRACT_TABLE = 'extractTable',
-  CAPTURE_TABLE = 'captureTable',
-  WAIT = 'wait',
-  SLEEP = 'sleep',
-  SPREADSHEET = 'spreadsheet',
-  LOOP_FOR = 'loopFor',
-  LOOP_WHILE = 'loopWhile',
-  VARIABLE = 'variable',
-  CONDITION = 'condition',
-  SCHEDULE = 'schedule',
-  EXECUTE_SCRIPT = 'executeScript',
-  EXTRACT_TEXT = 'extractText',
-  TRANSFORM_COLUMN = 'transformColumn',
-  GROUP_DATA = 'groupData',
-  EXECUTE_PYTHON = 'executePython',
-  CLOSE_BROWSER = 'closeBrowser'
+  LOGIN = 'login',           // Realiza login no sistema
+  OPEN_SITE = 'openSite',    // Navega para URL pública
+  CLICK_BUTTON = 'clickButton', // Clica em elementos
+  EXTRACT_TABLE = 'extractTable', // Insere texto (Input) - NOME LEGADO
+  CAPTURE_TABLE = 'captureTable', // Extrai tabelas HTML
+  WAIT = 'wait',             // Aguarda condições/tempo
+  SLEEP = 'sleep',           // Pausa fixa
+  SPREADSHEET = 'spreadsheet', // Leitura/Escrita de Excel/CSV
+  LOOP_FOR = 'loopFor',      // Repetição For
+  LOOP_WHILE = 'loopWhile',  // Repetição While
+  VARIABLE = 'variable',     // Manipulação de variáveis
+  CONDITION = 'condition',   // Lógica If/Else
+  SCHEDULE = 'schedule',     // Agendamento de execução
+  EXECUTE_SCRIPT = 'executeScript', // Executa JS no navegador
+  EXTRACT_TEXT = 'extractText', // Extrai texto de elementos (com Regex)
+  TRANSFORM_COLUMN = 'transformColumn', // Transforma dados de planilhas
+  GROUP_DATA = 'groupData',  // Agrupa dados (GroupBy)
+  EXECUTE_PYTHON = 'executePython', // Executa código Python arbitrário
+  CLOSE_BROWSER = 'closeBrowser' // Fecha instância do navegador
 }
 
 export interface SelectOption {

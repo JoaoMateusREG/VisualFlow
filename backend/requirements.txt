@@ -7,3 +7,5 @@ python-dotenv
 requests
 pandas
 openpyxl
+APScheduler
+pytz

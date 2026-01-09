@@ -35,17 +35,26 @@ class SavedWorkflow(BaseModel):
 class WorkflowStorage:
     """Gerenciador de armazenamento de workflows"""
     
-    def __init__(self, storage_dir: str = "workflows"):
-        self.storage_dir = Path(storage_dir)
-        self.storage_dir.mkdir(exist_ok=True)
+    def __init__(self):
+        # Diretório de dados do usuário (volume Docker ou local)
+        data_dir = os.environ.get("DATA_DIR", ".")
+        user_storage = Path(data_dir) / "workflows"
+        user_storage.mkdir(parents=True, exist_ok=True)
         
-        # Subdiretórios
-        self.workflows_dir = self.storage_dir / "saved"
-        self.templates_dir = self.storage_dir / "templates"
-        self.backups_dir = self.storage_dir / "backups"
+        # Templates vêm com a aplicação (read-only no Docker)
+        backend_dir = Path(__file__).parent
+        self.templates_dir = backend_dir / "templates"
+        self.templates_dir.mkdir(exist_ok=True)
         
-        for dir_path in [self.workflows_dir, self.templates_dir, self.backups_dir]:
+        # Diretórios de dados do usuário
+        self.workflows_dir = user_storage / "saved"
+        self.backups_dir = user_storage / "backups"
+        
+        for dir_path in [self.workflows_dir, self.backups_dir]:
             dir_path.mkdir(exist_ok=True)
+        
+        # Storage dir mantido para compatibilidade
+        self.storage_dir = user_storage
     
     def save_workflow(
         self, 

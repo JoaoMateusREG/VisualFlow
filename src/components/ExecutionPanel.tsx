@@ -17,6 +17,10 @@ interface ExecutionPanelProps {
   onClose: () => void;
 }
 
+/**
+ * Painel de Logs de Execução
+ * Exibe o status em tempo real da execução remota, incluindo logs, progresso e erros
+ */
 const ExecutionPanel: React.FC<ExecutionPanelProps> = ({ 
   execution, 
   isVisible, 

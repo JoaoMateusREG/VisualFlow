@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Save, Download, Upload, Zap, Server, Eye, FolderOpen, Code } from 'lucide-react';
+import { Play, Download, Upload, Zap, Server, Eye, FolderOpen, Code, X } from 'lucide-react';
 
 interface HeaderProps {
   onExecuteFlow: () => void;
@@ -15,6 +15,10 @@ interface HeaderProps {
   onViewCode: () => void;
 }
 
+/**
+ * Componente de Cabeçalho
+ * Contém os controles principais da aplicação como Executar, Salvar, Carregar e Gerenciar Workflows
+ */
 const Header: React.FC<HeaderProps> = ({ 
   onExecuteFlow,
   onExecuteRemote, 
@@ -58,8 +62,8 @@ const Header: React.FC<HeaderProps> = ({
             onClick={onSaveFlow}
             className="flex items-center space-x-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
           >
-            <Save size={16} />
-            <span className="text-sm">Salvar</span>
+            <Download size={16} />
+            <span className="text-sm">Download</span>
           </button>
 
           <button
@@ -74,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
             onClick={onClearFlow}
             className="flex items-center space-x-2 px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
           >
-            <Download size={16} />
+            <X size={16} />
             <span className="text-sm">Limpar</span>
           </button>
 

@@ -1,7 +1,15 @@
 import { NodeType, NodeConfig } from "./index";
 
+/**
+ * Tipos de nós disponíveis no sistema
+ * Alias para o enum NodeType
+ */
 export const NODE_TYPES = NodeType;
 
+/**
+ * Estratégias de seleção de elementos do Selenium
+ * Usadas para identificar elementos na página web
+ */
 export const SELENIUM_SELECTORS = [
   { value: "id", label: "ID" },
   { value: "name", label: "Name" },
@@ -13,6 +21,10 @@ export const SELENIUM_SELECTORS = [
   { value: "partial_link_text", label: "Partial Link Text" },
 ];
 
+/**
+ * Condições de espera explícita do Selenium
+ * Definem o estado que um elemento deve atingir antes de prosseguir
+ */
 export const WAIT_CONDITIONS = [
   { value: "presence_of_element_located", label: "Elemento Presente" },
   { value: "visibility_of_element_located", label: "Elemento Visível" },
@@ -25,6 +37,11 @@ export const WAIT_CONDITIONS = [
   { value: "element_to_be_selected", label: "Elemento Selecionado" },
 ];
 
+/**
+ * Retorna a configuração completa (metadados e inputs) para um tipo de nó
+ * @param type O tipo do nó (NodeType)
+ * @returns Objeto NodeConfig com descrição, ícone e campos de input
+ */
 export const getNodeConfig = (type: NodeType): NodeConfig | null => {
   const configs: Record<NodeType, NodeConfig> = {
     [NodeType.LOGIN]: {
@@ -377,10 +394,10 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
         },
         {
           name: "file_path",
-          label: "Caminho do Arquivo",
+          label: "Nome do Arquivo ou Caminho Relativo",
           type: "text",
-          placeholder: "C:/dados/planilha.xlsx ou dados.csv",
-          helpText: "Localização do arquivo no computador.",
+          placeholder: "dados.xlsx ou minha_pasta/dados.xlsx",
+          helpText: "Nome do arquivo ou subpasta. Arquivos são salvos em 'workflows/sheets/'.",
           required: true,
         },
         {

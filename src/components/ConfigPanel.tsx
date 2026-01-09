@@ -9,6 +9,11 @@ interface ConfigPanelProps {
   onNodeUpdate: (nodeId: string, inputName: string, value: string) => void;
 }
 
+/**
+ * Painel de Configuração de Nó
+ * Exibe o formulário dinâmico para editar as propriedades do nó selecionado
+ * Também gera e mostra o código Selenium correspondente em tempo real
+ */
 const ConfigPanel: React.FC<ConfigPanelProps> = ({ 
   selectedNode, 
   onClose, 

@@ -1,6 +1,13 @@
 import { Edge, Node } from 'reactflow';
 import { CustomNodeData, FlowExecutionStep, FlowData, FlowValidation, NodeType } from '../types';
 
+/**
+ * Gera a ordem de execução do fluxo baseada nas conexões (algoritmo de ordenação topológica)
+ * Garante que passos anteriores sejam executados antes de seus dependentes
+ * @param nodes Lista de nós do fluxo
+ * @param edges Lista de conexões entre os nós
+ * @returns Lista ordenada de passos para execução
+ */
 export const generateExecutionOrder = (nodes: Node<CustomNodeData>[], edges: Edge[]): FlowExecutionStep[] => {
   // Criar um mapa de adjacência para representar o grafo
   const adjacencyMap = new Map<string, string[]>();
@@ -69,6 +76,11 @@ export const generateExecutionOrder = (nodes: Node<CustomNodeData>[], edges: Edg
   return executionOrder;
 };
 
+/**
+ * Valida o fluxo procurando por erros comuns
+ * Verifica: nós órfãos, fluxo vazio, configurações ausentes
+ * @returns Objeto com status de validade e lista de erros
+ */
 export const validateFlow = (nodes: Node<CustomNodeData>[], edges: Edge[]): FlowValidation => {
   const errors: string[] = [];
   
@@ -108,6 +120,10 @@ export const validateFlow = (nodes: Node<CustomNodeData>[], edges: Edge[]): Flow
   };
 };
 
+/**
+ * Exporta o estado atual do fluxo para um formato JSON padronizado (FlowData)
+ * Inclui metadados, ordem de execução e dados brutos para reconstrução visual
+ */
 export const exportFlowAsJSON = (nodes: Node<CustomNodeData>[], edges: Edge[], workflowName?: string): FlowData => {
   try {
     const executionOrder = generateExecutionOrder(nodes, edges);
@@ -156,6 +172,11 @@ export const exportFlowAsJSON = (nodes: Node<CustomNodeData>[], edges: Edge[], w
   }
 };
 
+/**
+ * Gera código Python/Selenium executável a partir dos passos do fluxo
+ * ESTA FUNÇÃO GERA CÓDIGO ESTÁTICO PARA VISUALIZAÇÃO/EXPORTAÇÃO
+ * A execução real no backend usa uma lógica similar, mas dinâmica (SeleniumExecutor)
+ */
 export const generateSeleniumCode = (steps: FlowExecutionStep[]): string => {
   let code = `import pandas as pd
 from selenium import webdriver

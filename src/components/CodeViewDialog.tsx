@@ -10,6 +10,10 @@ interface CodeViewDialogProps {
   workflowName?: string;
 }
 
+/**
+ * Dialog para visualização de código
+ * Exibe o código Python gerado pelo workflow com realce de sintaxe e opção de cópia
+ */
 const CodeViewDialog: React.FC<CodeViewDialogProps> = ({ 
   isOpen, 
   onClose, 

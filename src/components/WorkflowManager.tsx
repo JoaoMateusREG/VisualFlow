@@ -9,7 +9,6 @@ import {
   Upload,
   Clock,
   Tag,
-  Star,
   X
 } from 'lucide-react';
 import { useWorkflows } from '../hooks/useWorkflows';
@@ -23,6 +22,11 @@ interface WorkflowManagerProps {
   onLoadWorkflow: (flowData: FlowData) => void;
 }
 
+/**
+ * Gerenciador de Workflows
+ * Interface completa para CRUD (Listar, Criar, Salvar, Deletar) de workflows
+ * Permite também Exportar/Importar arquivos e filtrar por tags
+ */
 const WorkflowManager: React.FC<WorkflowManagerProps> = ({
   isOpen,
   onClose,
@@ -52,8 +56,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
   const [saveForm, setSaveForm] = useState({
     name: '',
     description: '',
-    tags: '',
-    isTemplate: false
+    tags: ''
   });
 
   // Drag and drop handlers for workflow import
@@ -137,11 +140,11 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
         saveForm.name,
         saveForm.description,
         tags,
-        saveForm.isTemplate
+        false
       );
 
       setShowSaveDialog(false);
-      setSaveForm({ name: '', description: '', tags: '', isTemplate: false });
+      setSaveForm({ name: '', description: '', tags: '' });
       
       alert('Workflow salvo com sucesso!');
     } catch (err) {
@@ -292,8 +295,6 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
           {stats && (
             <div className="flex gap-6 text-sm text-gray-400">
               <span>Total: {stats.total_workflows}</span>
-              <span>Workflows: {stats.regular_workflows}</span>
-              <span>Templates: {stats.templates}</span>
               <span>Armazenamento: {stats.storage_size_mb} MB</span>
             </div>
           )}
@@ -342,8 +343,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
                 {/* Header do card */}
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-white mb-1 flex items-center gap-2">
-                      {workflow.is_template && <Star size={16} className="text-yellow-400" />}
+                    <h3 className="font-semibold text-white mb-1">
                       {workflow.name}
                     </h3>
                     <p className="text-sm text-gray-300 line-clamp-2">
@@ -468,19 +468,6 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
                     className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
                     placeholder="automação, login, teste"
                   />
-                </div>
-
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isTemplate"
-                    checked={saveForm.isTemplate}
-                    onChange={(e) => setSaveForm(prev => ({ ...prev, isTemplate: e.target.checked }))}
-                    className="mr-2"
-                  />
-                  <label htmlFor="isTemplate" className="text-sm text-gray-300">
-                    Salvar como template
-                  </label>
                 </div>
               </div>
 

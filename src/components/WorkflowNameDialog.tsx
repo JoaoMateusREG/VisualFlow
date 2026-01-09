@@ -9,6 +9,10 @@ interface WorkflowNameDialogProps {
   title?: string;
 }
 
+/**
+ * Dialog para nomear/renomear workflows
+ * Permite ao usuário definir o nome do arquivo/workflow antes de salvar
+ */
 const WorkflowNameDialog: React.FC<WorkflowNameDialogProps> = ({
   isOpen,
   onClose,

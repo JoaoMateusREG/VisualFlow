@@ -44,6 +44,10 @@ const iconMap: Record<string, LucideIcon> = {
   XCircle
 };
 
+/**
+ * Barra lateral de Blocos (Sidebar)
+ * Exibe a lista de nós disponíveis para arrastar (drag-and-drop) para o canvas
+ */
 const Sidebar: React.FC = () => {
   const onDragStart = (event: React.DragEvent<HTMLDivElement>, nodeType: NodeType) => {
     event.dataTransfer.setData('application/reactflow', nodeType);

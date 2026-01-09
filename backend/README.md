@@ -103,6 +103,34 @@ Cancela uma execução em andamento.
 ### `POST /api/validate-flow`
 Valida um fluxo sem executar.
 
+## 📁 Acesso a Dados (Planilhas)
+
+### `GET /api/data/list-files`
+Lista recursivamente todos os arquivos na pasta de planilhas.
+Útil para integração com ferramentas externas.
+
+**Query Params:**
+- `path`: (opcional) subpasta para listar
+- `recursive`: (opcional, default=true) listar subpastas
+
+**Response:**
+```json
+[
+  {
+    "name": "vendas.xlsx",
+    "folder": ".",
+    "relative_path": "vendas.xlsx",
+    "url": "http://.../api/data/sheets/vendas.xlsx",
+    "size": 1024,
+    "updated_at": "2024-01-08T10:00:00"
+  }
+]
+```
+
+### `GET /api/data/sheets/{caminho_arquivo}`
+Baixa um arquivo de planilha específico.
+Exemplo: `/api/data/sheets/pasta1/dados.xlsx`
+
 ## 🔧 Configuração
 
 ### Selenium Config

@@ -39,6 +39,10 @@ interface CustomNodeProps extends NodeProps {
   data: CustomNodeData;
 }
 
+/**
+ * Nó Personalizado do ReactFlow
+ * Renderiza o visual de cada bloco no canvas, incluindo ícone, cor e status
+ */
 const CustomNode: React.FC<CustomNodeProps> = ({ data, selected }) => {
   const config = getNodeConfig(data.type);
 
