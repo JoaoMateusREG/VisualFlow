@@ -231,7 +231,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               <Upload size={16} />
-              Importar
+              Carregar
             </button>
             
             <button
@@ -239,7 +239,7 @@ const WorkflowManager: React.FC<WorkflowManagerProps> = ({
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
             >
               <Download size={16} />
-              Exportar Atual
+              Baixar Atual
             </button>
 
             <button

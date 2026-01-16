@@ -16,7 +16,7 @@ import {
   XCircle,
   LucideIcon 
 } from 'lucide-react';
-import { CustomNodeData } from '../types';
+import { CustomNodeData, NodeType } from '../types';
 import { getNodeConfig } from '../types/nodeTypes';
 
 const iconMap: Record<string, LucideIcon> = {
@@ -72,6 +72,49 @@ const CustomNode: React.FC<CustomNodeProps> = ({ data, selected }) => {
 
       {/* Status de configuração */}
       <div className="px-3 py-2 bg-gray-750 rounded-b-lg">
+        {/* Nota/Comentário do usuário */}
+        {hasConfiguration && data.inputs && data.inputs.note && (
+          <div className="mb-1 pb-1 border-b border-gray-600">
+            <span className="text-xs text-gray-300 italic">
+              💬 {data.inputs.note}
+            </span>
+          </div>
+        )}
+        
+        {/* Informação específica do node (ex: nome da variável) */}
+        {hasConfiguration && data.inputs && (
+          <>
+            {data.type === NodeType.VARIABLE && data.inputs.variable_name && (
+              <div className="mb-1">
+                <span className="text-xs font-semibold text-amber-400">
+                  ${data.inputs.variable_name}
+                </span>
+              </div>
+            )}
+            {data.type === NodeType.OPEN_SITE && data.inputs.url && (
+              <div className="mb-1">
+                <span className="text-xs text-blue-400 truncate block" title={data.inputs.url}>
+                  {data.inputs.url.length > 25 ? data.inputs.url.substring(0, 25) + '...' : data.inputs.url}
+                </span>
+              </div>
+            )}
+            {data.type === NodeType.SPREADSHEET && data.inputs.variable_name && (
+              <div className="mb-1">
+                <span className="text-xs text-emerald-400">
+                  {data.inputs.variable_name}
+                </span>
+              </div>
+            )}
+            {data.type === NodeType.LOOP_FOR && data.inputs.dataframe_variable && (
+              <div className="mb-1">
+                <span className="text-xs text-cyan-400">
+                  Loop: {data.inputs.dataframe_variable}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+        
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400">
             {hasConfiguration ? '✅ Configurado' : '⚙️ Clique para configurar'}

@@ -21,15 +21,15 @@ if __name__ == "__main__":
         print(f"📂 Diretório de dados configurado para: {data_dir}")
 
     print("🚀 Iniciando VisualFlow Backend...")
-    print("📡 API disponível em: http://localhost:8000")
-    print("📚 Documentação em: http://localhost:8000/docs")
+    print("📡 API disponível em: http://localhost:8164")
+    print("📚 Documentação em: http://localhost:8164/docs")
     print("🔄 Modo de desenvolvimento ativo (auto-reload)")
     print("-" * 50)
     
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
+        port=8164,
         reload=True,
         log_level="info"
     )

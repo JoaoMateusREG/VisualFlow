@@ -110,7 +110,7 @@ const ConfigPanel: React.FC<ConfigPanelProps> = ({
             value={currentValue}
             onChange={(e) => handleInputChange(input.name, e.target.value)}
             rows={input.name.includes('selector') ? 2 : 1}
-            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none resize-none"
+            className="w-full h-40 px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-400 focus:border-blue-500 focus:outline-none resize-none"
           />
         );
     }

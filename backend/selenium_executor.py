@@ -79,8 +79,16 @@ class SeleniumExecutor:
             chrome_options.add_argument(f"--window-size={self.config.window_size}")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
-            chrome_options.add_argument("--disable-gpu")
+            
+            # Desabilitar GPU apenas em Linux/Docker ou Headless para evitar problemas visuais no Mac/Windows local
+            import platform
+            if self.config.headless or platform.system() == 'Linux':
+                chrome_options.add_argument("--disable-gpu")
+                
             chrome_options.add_argument("--disable-web-security")
+            chrome_options.add_argument("--ignore-certificate-errors")  # Ignorar erros de SSL
+            chrome_options.add_argument("--allow-running-insecure-content") # Permitir conteúdo misto
+            chrome_options.add_argument("--remote-debugging-port=9222") # Estabilizar conexão CDP
             chrome_options.add_argument("--disable-features=VizDisplayCompositor")
             chrome_options.add_argument("--disable-extensions")
             chrome_options.add_argument("--disable-plugins")
@@ -101,21 +109,39 @@ class SeleniumExecutor:
             chrome_options.add_argument("--disable-log-file")
             chrome_options.add_argument("--log-level=3")  # Apenas erros críticos
             
+            # Configurar caminho do Chromium (para Docker/Linux com Chromium)
+            # Tentar detectar se está rodando em ambiente com Chromium
+            import shutil
+            chromium_path = shutil.which('chromium') or shutil.which('chromium-browser')
+            if chromium_path:
+                chrome_options.binary_location = chromium_path
+                logger.info(f"🔧 Usando Chromium em: {chromium_path}")
+            
             # Configurações experimentais para melhor compatibilidade
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            chrome_options.add_experimental_option('useAutomationExtension', False)
-            chrome_options.add_argument("--disable-blink-features=AutomationControlled")
             
             # Prefs para desabilitar notificações e popups
+            # Definir diretório de download correto (compatível com Docker e Local)
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            default_download_dir = os.path.join(project_root, "visualflow_data")
+            download_dir = os.getenv("DATA_DIR", default_download_dir)
+            
+            # Garantir que diretório existe
+            os.makedirs(download_dir, exist_ok=True)
+            
             prefs = {
                 "profile.default_content_setting_values": {
                     "notifications": 2,  # Bloquear notificações
                     "popups": 2,         # Bloquear popups
+                    "geolocation": 2,    # Bloquear localização
+                    "media_stream": 2,   # Bloquear câmera/mic
                 },
                 "profile.managed_default_content_settings": {
                     "images": 2 if self.config.headless else 1  # Bloquear imagens apenas em headless
                 },
-                "download.default_directory": os.getenv("DATA_DIR", "/app/data"),
+                "credentials_enable_service": False,
+                "profile.password_manager_enabled": False,
+                "autofill.profile_enabled": False,
+                "download.default_directory": download_dir,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
                 "safebrowsing.enabled": True
@@ -125,8 +151,15 @@ class SeleniumExecutor:
             # Usar Selenium Service moderno (Selenium 4.6+)
             logger.info("🔧 Usando Selenium Service com gerenciamento automático de driver...")
             
-            # Criar Service sem especificar caminho - Selenium gerencia automaticamente
-            service = Service()
+            # Detectar chromedriver
+            driver_path = shutil.which('chromedriver') or shutil.which('chromium.chromedriver')
+            service_args = {}
+            if driver_path:
+                service_args['executable_path'] = driver_path
+                logger.info(f"🔧 Usando ChromeDriver em: {driver_path}")
+            
+            # Criar Service
+            service = Service(**service_args)
             
             # Inicializar driver com Service moderno
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
@@ -139,7 +172,7 @@ class SeleniumExecutor:
             self.wait = WebDriverWait(self.driver, self.config.timeout)
             
             # Executar script para remover indicadores de automação
-            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            # self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
             logger.info("✅ Chrome WebDriver inicializado com sucesso via Selenium Service")
             
@@ -191,7 +224,7 @@ class SeleniumExecutor:
             if url:
                 logger.info(f"🌐 Navegando para: {url}")
                 self.driver.get(url)
-                self.driver.maximize_window()
+                # self.driver.maximize_window() # Removido para evitar erro Runtime.evaluate
                 logs.append(f"Navegou para: {url}")
                 await asyncio.sleep(1)
             
@@ -260,7 +293,7 @@ class SeleniumExecutor:
             
             logger.info(f"🌐 Navegando para: {url}")
             self.driver.get(url)
-            self.driver.maximize_window()
+            # self.driver.maximize_window() # Removido para evitar erro Runtime.evaluate
             logs.append(f"Navegou para: {url}")
             
             # Aguardar tempo especificado
@@ -804,12 +837,17 @@ class SeleniumExecutor:
             logger.info("🐍 Executando código Python customizado...")
             
             # Preparar contexto
+            import datetime as dt_module
+            import calendar as calendar_module
             context = {
                 'driver': self.driver,
                 'variables': self.pandas_executor.variables,
                 'dataframes': self.pandas_executor.dataframes,
                 'pd': __import__('pandas'),
                 'time': __import__('time'),
+                'datetime': dt_module.datetime,  # Classe datetime diretamente
+                'timedelta': dt_module.timedelta,  # Também útil para cálculos
+                'calendar': calendar_module,
                 're': __import__('re'),
                 'WebDriverWait': WebDriverWait,
                 'By': By,
@@ -829,6 +867,11 @@ class SeleniumExecutor:
             
             output = f.getvalue()
             logs = [line for line in output.split('\n') if line]
+            
+            # Log das variáveis disponíveis após execução
+            if self.pandas_executor.variables:
+                logs.append(f"✅ Variáveis disponíveis: {', '.join(self.pandas_executor.variables.keys())}")
+            
             logs.append("Código Python executado com sucesso")
             
             return {"success": True, "logs": logs}

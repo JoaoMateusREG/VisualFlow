@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
-  visualflow:
+  app:
     build: .
+    image: visualflow:latest
     container_name: visualflow
     ports:
-      - "8164:8000"
+      - "8164:8164"
     environment:
       - DATA_DIR=/app/data
     volumes:

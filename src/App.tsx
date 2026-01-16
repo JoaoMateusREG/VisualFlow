@@ -68,6 +68,30 @@ const defaultEdgeOptions: DefaultEdgeOptions = {
 let nodeId = 0;
 const getId = (): string => `node_${nodeId++}`;
 
+/**
+ * Atualiza o contador de IDs baseado nos nós existentes
+ * Previne colisões de ID ao carregar workflows salvos
+ */
+const updateNodeIdCounter = (nodes: CustomNodeType[]) => {
+  if (nodes.length === 0) {
+    nodeId = 0;
+    return;
+  }
+  
+  // Encontrar o maior ID numérico entre os nodes existentes
+  const maxId = nodes.reduce((max, node) => {
+    const match = node.id.match(/node_(\d+)/);
+    if (match) {
+      const id = parseInt(match[1], 10);
+      return id > max ? id : max;
+    }
+    return max;
+  }, -1);
+  
+  // Definir o próximo ID como maior ID + 1
+  nodeId = maxId + 1;
+};
+
   /**
    * Componente Principal da Aplicação
    * Gerencia o estado do fluxo, painéis laterais e interação com a API
@@ -187,6 +211,7 @@ const getId = (): string => `node_${nodeId++}`;
                   setWorkflowName(name);
                   setSelectedNode(null);
                   execution.clearExecution();
+                  updateNodeIdCounter(restoredNodes);
                   alert(`Workflow "${name}" importado com sucesso!`);
                 } else {
                   alert('Arquivo de workflow inválido! Estrutura não reconhecida.');
@@ -395,6 +420,7 @@ const getId = (): string => `node_${nodeId++}`;
                 setWorkflowName(name);
                 setSelectedNode(null);
                 execution.clearExecution();
+                updateNodeIdCounter(restoredNodes);
                 alert(`Workflow "${name}" carregado com sucesso!`);
               } else {
                 alert('Arquivo de workflow inválido! Estrutura não reconhecida.');
@@ -449,6 +475,7 @@ const getId = (): string => `node_${nodeId++}`;
       setEdges(flowData.rawData.edges);
       setSelectedNode(null);
       execution.clearExecution();
+      updateNodeIdCounter(restoredNodes);
       
       // Definir nome do workflow
       if (flowData.metadata && flowData.metadata.name) {
@@ -468,6 +495,7 @@ const getId = (): string => `node_${nodeId++}`;
       setEdges(flowData.edges);
       setSelectedNode(null);
       execution.clearExecution();
+      updateNodeIdCounter(restoredNodes);
       
       // Definir nome do workflow
       if (flowData.metadata && flowData.metadata.name) {

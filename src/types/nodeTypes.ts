@@ -51,6 +51,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-blue-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "url",
           label: "URL",
           type: "text",
@@ -133,6 +141,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-pink-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "url",
           label: "URL",
           type: "text",
@@ -155,6 +171,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "MousePointer",
       color: "bg-green-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "selector_type",
           label: "Tipo de Seletor",
@@ -216,6 +240,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Type",
       color: "bg-purple-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "selector_type",
           label: "Tipo de Seletor",
@@ -283,6 +315,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Clock",
       color: "bg-orange-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "wait_type",
           label: "Tipo de Espera",
@@ -356,6 +396,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-indigo-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "duration",
           label: "Duração da Pausa (segundos)",
           type: "number",
@@ -378,6 +426,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "FileSpreadsheet",
       color: "bg-emerald-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "operation",
           label: "Operação",
@@ -480,6 +536,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-cyan-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "loop_type",
           label: "Tipo de Loop",
           type: "select",
@@ -549,6 +613,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Repeat",
       color: "bg-teal-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "condition_type",
           label: "Tipo de Condição",
@@ -629,6 +701,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-amber-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "operation",
           label: "Operação",
           type: "select",
@@ -700,6 +780,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "GitBranch",
       color: "bg-rose-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "condition_type",
           label: "Tipo de Condição",
@@ -790,6 +878,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-yellow-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "selector_type",
           label: "Tipo de Seletor",
           type: "select",
@@ -850,6 +946,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Calendar",
       color: "bg-violet-600",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "schedule_type",
           label: "Tipo de Agendamento",
@@ -946,6 +1050,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-red-600",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "script",
           label: "Script JavaScript",
           type: "text",
@@ -968,6 +1080,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Search",
       color: "bg-pink-500",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "selector_type",
           label: "Tipo de Seletor",
@@ -1033,7 +1153,15 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       description: "Encerra a instância do navegador e limpa os recursos.",
       icon: "XCircle", 
       color: "bg-red-600",
-      inputs: [],
+      inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },],
     },
     [NodeType.TRANSFORM_COLUMN]: {
       label: "Transformar Coluna",
@@ -1041,6 +1169,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Columns",
       color: "bg-teal-500",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "dataframe_variable",
           label: "Variável DataFrame",
@@ -1094,6 +1230,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       color: "bg-indigo-500",
       inputs: [
         {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
+        {
           name: "dataframe_variable",
           label: "Variável DataFrame",
           type: "text",
@@ -1132,6 +1276,14 @@ export const getNodeConfig = (type: NodeType): NodeConfig | null => {
       icon: "Terminal",
       color: "bg-slate-700",
       inputs: [
+        {
+          name: "note",
+          label: "Nota/Comentário (opcional)",
+          type: "text",
+          placeholder: "Ex: Descrição do que este bloco faz",
+          helpText: "Adicione uma nota para identificar este bloco no workflow",
+          required: false,
+        },
         {
           name: "code",
           label: "Código Python",
